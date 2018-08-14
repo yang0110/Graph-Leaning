@@ -22,8 +22,9 @@ def knn_graph(node_num, dimension=2, k=10):
 	adj_matrix=rbf_kernel(features, gamma=(1)/(2*(0.5)**2))
 	for i in range(node_num):
 		rbf_row=adj_matrix[i,:]
-		neighbors=np.argsort(rbf_row)[node_num-k:]
-		adj_matrix[i, -neighbors]=0.0
+		neighbors=np.argsort(rbf_row)[:node_num-k]
+		adj_matrix[i, neighbors]=0.0
+		adj_matrix[neighbors,i]=0.0
 	np.fill_diagonal(adj_matrix,0)
 	laplacian=csgraph.laplacian(adj_matrix, normed=False)
 	return adj_matrix, laplacian, features
