@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import TruncatedSVD
 import networkx as nx 
 import os 
-os.chdir('D:/Research/Graph Learning/code/')
+os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
 from community import community_louvain
 import pandas as pd 
 import csv
@@ -20,37 +20,49 @@ import seaborn as sns
 from synthetic_data import *
 from gl_sigrep import Gl_sigrep 
 from primal_dual_gl import Primal_dual_gl 
-from utils import vector_form, sum_squareform
+from utils import *
 
-node_num=10
-signal_num=100
-rbf_adj, rbf_lap, rbf_pos=rbf_graph(node_num)
-X_t=generate_signal(signal_num, node_num, rbf_lap)
-X=X_t.T
+node_num=20
+signal_num=1000
+error_sigma=0.01
+knn_adj, knn_lap, knn_pos=knn_graph(node_num)
+X, X_noise, item_features=generate_signal(signal_num, node_num, knn_pos, error_sigma)
 
-Z=rbf_kernel(X)
+rbf_dis=rbf_kernel(X_noise.T)
+np.fill_diagonal(rbf_dis, 0)
 
-iteration=1000
-alpha=0.5
-beta=0.1
+Z=rbf_dis
+Z=filter_graph_to_knn(Z, node_num)
+
+alpha=3
+beta=0.5
 w_0=np.zeros(int((node_num-1)*node_num/2))
 c=0
-
-primal_gl=Primal_dual_gl(node_num, Z, alpha, beta, iteration, c=c)
-
-vector_adj, primal_adj=primal_gl.run()
+primal_gl=Primal_dual_gl(node_num, Z, alpha, beta, c=c)
+vector_adj, primal_adj, error=primal_gl.run()
 
 
-
-
-
-
-
-fig, (ax1, ax2)=plt.subplots(1,2, figsize=(8,4))
-c1=ax1.pcolor(rbf_adj,cmap='RdBu', vmin=0, vmax=1)
+fig, (ax1, ax2)=plt.subplots(2,1, figsize=(5,8))
+c1=ax1.pcolor(adj_matrix, cmap='RdBu')
 ax1.set_title('Ground Truth W')
-c2=ax2.pcolor(primal_adj,cmap='RdBu', vmin=0, vmax=1)
+c2=ax2.pcolor(primal_adj,cmap='RdBu')
 ax2.set_title('Learned W')
 fig.colorbar(c1, ax=ax1)
 fig.colorbar(c2, ax=ax2)
+plt.show()
+
+
+fig, (ax1, ax2)=plt.subplots(2,1, figsize=(5,8))
+c1=ax1.pcolor(adj_matrix, cmap='RdBu')
+ax1.set_title('Ground Truth W')
+c2=ax2.pcolor(primal_adj,cmap='RdBu')
+ax2.set_title('filtered Learned W')
+fig.colorbar(c1, ax=ax1)
+fig.colorbar(c2, ax=ax2)
+plt.show()
+
+
+plt.plot(error)
+plt.ylabel('Learning Error', fontsize=12)
+plt.xlabel('Iteration', fontsize=12)
 plt.show()

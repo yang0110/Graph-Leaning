@@ -1,12 +1,23 @@
 import numpy as np
+import random
+from random import choice
+import datetime
 from matplotlib.pylab import *
 import argparse
 import matplotlib.pyplot as plt
+from sklearn.decomposition import TruncatedSVD
 import networkx as nx 
 import os 
-from sklearn.metrics.pairwise import rbf_kernel
+os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
+import pandas as pd 
+import csv
+from sklearn.metrics.pairwise import cosine_similarity, rbf_kernel
+from sklearn.preprocessing import StandardScaler, Normalizer, MinMaxScaler
+from collections import Counter
+from scipy.sparse import csgraph
 import seaborn as sns
 from synthetic_data import *
+from scipy.optimize import minimize
 
 
 def sum_squareform(n):
@@ -49,4 +60,32 @@ def lin_map(x, lims_out, lims_in):
 	y=np.zeros(len([x]))
 	y=((x-a)*(d-c)/(b-a))+c
 	return y
+
+
+def filter_graph_to_knn(adj_matrix, node_num, k=5):
+	for i in range(node_num):
+		rbf_row=adj_matrix[i,:]
+		neighbors=np.argsort(rbf_row)[:node_num-k]
+		adj_matrix[i, neighbors]=0
+		adj_matrix[neighbors,i]=0
+	np.fill_diagonal(adj_matrix,0)
+	return adj_matrix
+
+def f1(x,y):
+	return np.sin((2-x-y)**2)
+
+def f2(x,y):
+	return np.cos((x+y)**2)
+
+def f3(x,y):
+	return  (x-0.5)**2+(y-0.5)**3+x-y 
+
+def f4(x,y):
+	return np.sin(3*(x-0.5)**2+(y-0.5)**2)
+
+
+
+
+
+
 

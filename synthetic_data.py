@@ -1,17 +1,28 @@
 import numpy as np
+import random
+from random import choice
+import datetime
 from matplotlib.pylab import *
+import argparse
 import matplotlib.pyplot as plt
+from sklearn.decomposition import TruncatedSVD
 import networkx as nx 
 import os 
-from scipy.sparse import csgraph
-os.chdir('D:/Research/Graph Learning/code/')
+os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
+from community import community_louvain
+import pandas as pd 
+import csv
 from sklearn.metrics.pairwise import cosine_similarity, rbf_kernel
+from sklearn.preprocessing import StandardScaler, Normalizer, MinMaxScaler
+from collections import Counter
+from scipy.sparse import csgraph
 import seaborn as sns
+from sklearn.datasets import make_blobs
 
 def rbf_graph(node_num, dimension=2, threshold=0.5):
 	features=np.random.uniform(low=0, high=1, size=(node_num, dimension))
 	adj_matrix=rbf_kernel(features, gamma=(1)/(2*(0.5)**2))
-	adj_matrix[np.where(adj_matrix<threshold)]=0.0
+	#adj_matrix[np.where(adj_matrix<threshold)]=0.0
 	np.fill_diagonal(adj_matrix,0)
 	laplacian=csgraph.laplacian(adj_matrix, normed=False)
 	return adj_matrix, laplacian, features
@@ -23,8 +34,8 @@ def knn_graph(node_num, dimension=2, k=10):
 	for i in range(node_num):
 		rbf_row=adj_matrix[i,:]
 		neighbors=np.argsort(rbf_row)[:node_num-k]
-		adj_matrix[i, neighbors]=0.0
-		adj_matrix[neighbors,i]=0.0
+		adj_matrix[i, neighbors]=0
+		adj_matrix[neighbors,i]=0
 	np.fill_diagonal(adj_matrix,0)
 	laplacian=csgraph.laplacian(adj_matrix, normed=False)
 	return adj_matrix, laplacian, features
@@ -67,7 +78,18 @@ def generate_signal(signal_num, node_num, node_features, error_sigma):
 	signals=np.dot(node_features, item_f.T).T
 	noise=np.random.normal(scale=error_sigma, size=(signals.shape[0], signals.shape[1]))
 	noise_signals=signals+noise
-	return signals, noise_signals
+	return signals, noise_signals, item_f
+
+def make_blobs_signal(signal_num, node_num, cluster_num, dimension, error_sigma):
+	node_features, labels=make_blobs(n_samples=node_num, n_features=dimension, centers=cluster_num, cluster_std=2, center_box=(0,1))
+	item_f=np.random.normal(size=(signal_num, node_features.shape[1]))
+	signals=np.dot(node_features, item_f.T).T
+	noise=np.random.normal(scale=error_sigma, size=(signals.shape[0], signals.shape[1]))
+	noise_signals=signals+noise
+	adj_matrix=rbf_kernel(node_features)
+
+	np.fill_diagonal(adj_matrix,0)
+	return adj_matrix, node_features, signals, noise_signals
 
 def find_corrlation_matrix(signals):
 	corr_matrix=np.corrcoef(signals.T)
