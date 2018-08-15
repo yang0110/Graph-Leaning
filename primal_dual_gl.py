@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import TruncatedSVD
 import networkx as nx 
 import os 
-os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
+os.chdir('D:/Research/Graph Learning/code/')
 import pandas as pd 
 import csv
 from sklearn.metrics.pairwise import cosine_similarity, rbf_kernel
@@ -23,7 +23,7 @@ from utils import sum_squareform, vector_form, lin_map
 
 
 class Primal_dual_gl():
-	def __init__(self, node_num, Z, alpha, beta, c=0):
+	def __init__(self, node_num, Z, alpha=5, beta=0.1, c=0):
 		self.node_num=node_num
 		self.ncols=int(node_num*(node_num-1)/2)
 		self.Z=Z

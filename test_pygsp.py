@@ -1,5 +1,5 @@
 import os
-os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
+os.chdir('D:/Research/Graph Learning/code/')
 from pygsp import graphs, plotting, filters
 import numpy as np
 from matplotlib.pylab import *

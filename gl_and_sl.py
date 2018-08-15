@@ -3,9 +3,9 @@ import numpy as np
 from matplotlib.pylab import *
 import matplotlib.pyplot as plt
 import os 
-os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
+os.chdir('D:/Research/Graph Learning/code/')
 from sklearn.metrics.pairwise import rbf_kernel
-#import seaborn as sns
+import seaborn as sns
 from synthetic_data import *
 from primal_dual_gl import Primal_dual_gl 
 from utils import *

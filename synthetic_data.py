@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import TruncatedSVD
 import networkx as nx 
 import os 
-os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
+os.chdir('D:/Research/Graph Learning/code/')
 from community import community_louvain
 import pandas as pd 
 import csv
@@ -22,7 +22,7 @@ from sklearn.datasets import make_blobs
 def rbf_graph(node_num, dimension=2, threshold=0.5):
 	features=np.random.uniform(low=0, high=1, size=(node_num, dimension))
 	adj_matrix=rbf_kernel(features, gamma=(1)/(2*(0.5)**2))
-	#adj_matrix[np.where(adj_matrix<threshold)]=0.0
+	adj_matrix[np.where(adj_matrix<threshold)]=0.0
 	np.fill_diagonal(adj_matrix,0)
 	laplacian=csgraph.laplacian(adj_matrix, normed=False)
 	return adj_matrix, laplacian, features
@@ -107,3 +107,15 @@ def create_networkx_graph(node_num, adj_matrix):
 			else:
 				pass
 	return G
+
+def f1(x,y):
+	return np.sin((2-x-y)**2)
+
+def f2(x,y):
+	return np.cos((x+y)**2)
+
+def f3(x,y):
+	return  (x-0.5)**2+(y-0.5)**3+x-y 
+
+def f4(x,y):
+	return np.sin(3*(x-0.5)**2+(y-0.5)**2)
