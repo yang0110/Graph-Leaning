@@ -3,7 +3,7 @@ import numpy as np
 from matplotlib.pylab import *
 import matplotlib.pyplot as plt
 import os 
-os.chdir('D:/Research/Graph Learning/code/')
+os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
 from sklearn.metrics.pairwise import rbf_kernel
 import seaborn as sns
 from synthetic_data import *
@@ -12,34 +12,35 @@ from utils import *
 from pygsp import graphs, plotting, filters
 import pyunlocbox
 import networkx as nx 
-node_num=100
+import datetime
+path='C:/Kaige_Research/Graph Learning/graph_learning_code/results/test_results/'
+timeRun = datetime.datetime.now().strftime('_%m_%d_%H_%M_%S') 
+
+node_num=20
 signal_num=1000
-error_sigma=0.1
+error_sigma=0.5
 adj_matrix, knn_lap, knn_pos=rbf_graph(node_num)
 X, X_noise, item_features=generate_signal(signal_num, node_num, knn_pos, error_sigma)
 adj_matrix=filter_graph_to_knn(adj_matrix, node_num)
 
+newpath=path+'error_sigma_%s'%(error_sigma)+str(timeRun)+'/'
+if not os.path.exists(newpath):
+	    os.makedirs(newpath)
 
 signal_error_list=[]
 graph_error_list=[]
-gl_signal_error_list=[]
 knn_graph_error_list=[]
 knn_signal_error_list=[]
 cov_matrix={}
 bias={}
 node_f=np.zeros((node_num, 2))
 node_f_avg=np.zeros((node_num,2))
-gl_cov_matrix={}
-gl_bias={}
-gl_node_f=np.zeros((node_num,2))
 for ii in range(node_num):
 	cov_matrix[ii]=np.zeros((2,2))
 	bias[ii]=np.zeros(2)
-	gl_cov_matrix[ii]=np.zeros((2,2))
-	gl_bias[ii]=np.zeros(2)
 
 
-for i in np.arange(60)+1:
+for i in np.arange(100)+1:
 	print('i',i)
 	data=X_noise[:i,:]
 	noise_signal=X_noise[i,:]
@@ -48,8 +49,8 @@ for i in np.arange(60)+1:
 	np.fill_diagonal(rbf_dis, 0)
 	Z=filter_graph_to_knn(rbf_dis, node_num)
 	## Learn Graph
-	alpha=5
-	beta=0.1
+	alpha=1
+	beta=0.05
 	primal_gl=Primal_dual_gl(node_num, Z, alpha, beta)
 	primal_adj, error=primal_gl.run()
 
@@ -70,11 +71,6 @@ for i in np.arange(60)+1:
 	                                x0=x0, rtol=0, maxit=2000)
 	learned_signal=prob2['sol']
 
-	for iii in range(node_num):
-		gl_cov_matrix[iii]+=np.outer(item_features[i], item_features[i])
-		gl_bias[iii]+=item_features[i]*learned_signal[iii]
-		gl_node_f[iii]=np.dot(np.linalg.inv(gl_cov_matrix[iii]), gl_bias[iii])
-		gl_signal=np.dot(gl_node_f, item_features[i])
 
 
 
@@ -82,8 +78,6 @@ for i in np.arange(60)+1:
 	graph_error=np.linalg.norm(primal_adj-adj_matrix)
 	signal_error_list.extend([signal_error])
 	graph_error_list.extend([graph_error])
-	gl_signal_error=np.linalg.norm(gl_signal-real_signal)
-	gl_signal_error_list.extend([gl_signal_error])
 	### KNN graph construction
 	knn_adj=rbf_kernel(node_f)
 	np.fill_diagonal(knn_adj, 0)
@@ -111,12 +105,13 @@ for i in np.arange(60)+1:
 
 
 plt.plot(signal_error_list, label='GL')
-plt.plot(gl_signal_error_list, label='GL-estimated')
 plt.plot(knn_signal_error_list, label='KNN')
 plt.ylabel('Signal Learning Error', fontsize=12)
 plt.xlabel('Time', fontsize=12)
 plt.legend(loc=1, fontsize=12)
+plt.savefig(newpath+'signal_error'+'error_sigma_%s'%(error_sigma)+'.png', dpi=100)
 plt.show()
+
 
 
 plt.plot(graph_error_list, label='GL')
@@ -124,13 +119,11 @@ plt.plot(knn_graph_error_list, label='KNN')
 plt.ylabel('Graph Learning Error', fontsize=12)
 plt.xlabel('Time', fontsize=12)
 plt.legend(loc=1, fontsize=12)
+plt.savefig(newpath+'graph_error'+'error_sigma_%s'%(error_sigma)+'.png', dpi=100)
 plt.show()
 
 
-plt.plot(graph_error_list)
-plt.ylabel('Graph Learning Error', fontsize=12)
-plt.xlabel('Time', fontsize=12)
-plt.show()
+
 
 
 
@@ -144,6 +137,8 @@ edge_alpha=edge_color
 nodes=nx.draw_networkx_nodes(real_graph, knn_pos, node_color=real_signal,node_size=100, cmap=plt.cm.Reds, vmin=np.min(real_signal), vmax=np.max(real_signal))
 edges=nx.draw_networkx_edges(real_graph, knn_pos, width=1.0, alpha=1.0, edge_color=edge_color, edge_cmap=plt.cm.Blues, vmin=0, vmax=1)
 plt.axis('off')
+plt.savefig(newpath+'real_graph_and_signal'+'error_sigma_%s'%(error_sigma)+'.png', dpi=100)
+
 plt.show()
 
 
@@ -156,6 +151,8 @@ edge_alpha=edge_color
 nodes=nx.draw_networkx_nodes(learned_graph, knn_pos, node_color=learned_signal,node_size=100, cmap=plt.cm.Reds, vmin=np.min(real_signal), vmax=np.max(real_signal))
 edges=nx.draw_networkx_edges(learned_graph, knn_pos, width=1.0, alpha=1.0, edge_color=edge_color, edge_cmap=plt.cm.Blues, vmin=0, vmax=1)
 plt.axis('off')
+plt.savefig(newpath+'learned_graph_and_signal'+'error_sigma_%s'%(error_sigma)+'.png', dpi=100)
+
 plt.show()
 
 
@@ -168,24 +165,37 @@ edge_alpha=edge_color
 nodes=nx.draw_networkx_nodes(knn_graph, knn_pos, node_color=knn_signal,node_size=100, cmap=plt.cm.Reds, vmin=np.min(real_signal), vmax=np.max(real_signal))
 edges=nx.draw_networkx_edges(knn_graph, knn_pos, width=1.0, alpha=1.0, edge_color=edge_color, edge_cmap=plt.cm.Blues, vmin=0, vmax=1)
 plt.axis('off')
+plt.savefig(newpath+'knn_graph_and_signal'+'error_sigma_%s'%(error_sigma)+'.png', dpi=100)
+
 plt.show()
 
-##Plot graph 
-
-fig, (ax1, ax2)=plt.subplots(1,2, figsize=(7,3))
-c1=ax1.pcolor(adj_matrix, cmap='RdBu', vmin=np.min(adj_matrix), vmax=np.max(adj_matrix))
-ax1.set_title('Ground Truth W')
-c2=ax2.pcolor(primal_adj, cmap='RdBu',vmin=np.min(adj_matrix), vmax=np.max(adj_matrix))
-ax2.set_title('Learned W')
-fig.colorbar(c1, ax=ax1)
-fig.colorbar(c2, ax=ax2)
-plt.show()
-
-### plot signal
+##Plot w
 plt.figure(figsize=(5,5))
+plt.pcolor(adj_matrix, cmap='RdBu', vmin=np.min(adj_matrix), vmax=np.max(adj_matrix))
+plt.colorbar()
+plt.title('Real Adjacency Matrix')
+plt.savefig(newpath+'real_w'+'error_sigma_%s'%(error_sigma)+'.png', dpi=100)
+plt.show()
+
+plt.figure(figsize=(5,5))
+plt.pcolor(primal_adj, cmap='RdBu', vmin=np.min(adj_matrix), vmax=np.max(adj_matrix))
+plt.colorbar()
+plt.title('Learned Adjacency Matrix')
+plt.savefig(newpath+'learned_w'+'error_sigma_%s'%(error_sigma)+'.png', dpi=100)
+plt.show()
+
+
+plt.figure(figsize=(5,5))
+plt.pcolor(knn_adj, cmap='RdBu', vmin=np.min(adj_matrix), vmax=np.max(adj_matrix))
+plt.colorbar()
+plt.title('Knn Adjacency Matrix')
+plt.savefig(newpath+'Knn_w'+'error_sigma_%s'%(error_sigma)+'.png', dpi=100)
+plt.show()
+
+
+
 plt.plot(error)
-plt.xlabel('Time', fontsize=12)
-plt.ylabel('Graph Learning Error', fontsize=12)
+plt.ylabel('Learning Error', fontsize=12)
 plt.show()
 
 

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import TruncatedSVD
 import networkx as nx 
 import os 
-os.chdir('D:/Research/Graph Learning/code/')
+os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
 from community import community_louvain
 import pandas as pd 
 import csv
@@ -94,8 +94,6 @@ def make_blobs_signal(signal_num, node_num, cluster_num, dimension, error_sigma)
 def find_corrlation_matrix(signals):
 	corr_matrix=np.corrcoef(signals.T)
 	return corr_matrix
-
-
 
 def create_networkx_graph(node_num, adj_matrix):
 	G=nx.Graph()
