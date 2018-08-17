@@ -3,7 +3,7 @@ import numpy as np
 from matplotlib.pylab import *
 import matplotlib.pyplot as plt
 import os 
-os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
+os.chdir('D:/Research/Graph Learning/code/')
 from sklearn.metrics.pairwise import rbf_kernel
 import seaborn as sns
 from synthetic_data import *
@@ -13,7 +13,7 @@ from pygsp import graphs, plotting, filters
 import pyunlocbox
 import networkx as nx 
 import datetime
-path='C:/Kaige_Research/Graph Learning/graph_learning_code/results/test_results/'
+path='D:/Research/Graph Learning/code/results/test_results/'
 timeRun = datetime.datetime.now().strftime('_%m_%d_%H_%M_%S') 
 
 node_num=20

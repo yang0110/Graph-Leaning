@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import TruncatedSVD
 import networkx as nx 
 import os 
-os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
+os.chdir('D:/Research/Graph Learning/code/')
 import pandas as pd 
 import csv
 from sklearn.metrics.pairwise import cosine_similarity, rbf_kernel
@@ -37,7 +37,7 @@ class Primal_dual_gl():
 		self.S=sum_squareform(node_num)
 		self.d=np.dot(self.S, self.w)
 		self.eplison=10**(-5)
-		self.max_iteration=1000
+		self.max_iteration=3000
 		self.y=None
 		self.y_bar=None
 		self.p=None
@@ -49,7 +49,7 @@ class Primal_dual_gl():
 		self.ep=lin_map(0.0, [0,1/(1+self.mu)], [0,1])
 		self.gamma=lin_map(0.5, [self.ep, (1-self.ep)/self.mu], [0,1])
 
-	def run(self):
+	def run(self, real_w):
 		error_list=[]
 		for i in range(self.max_iteration):
 			#print('iteration', i)
@@ -85,6 +85,6 @@ class Primal_dual_gl():
 
 #			print('w_ratio', w_ratio)
 #			print('d_ratio', d_ratio)
-			error=np.linalg.norm(self.W-self.Z)
+			error=np.linalg.norm(self.W-real_w)
 			error_list.extend([error])
 		return self.W, error_list

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import TruncatedSVD
 import networkx as nx 
 import os 
-os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
+os.chdir('D:/Research/Graph Learning/code/')
 from community import community_louvain
 import pandas as pd 
 import csv
@@ -65,9 +65,9 @@ def normalized_trace(matrix, target_trace):
 	return normed_matrix
 
 
-def generate_signal_gl_siprep(signal_num, node_num, laplacian):
+def generate_signal_gl_siprep(signal_num, node_num, laplacian, error_sigma):
 	mean=np.zeros(node_num)
-	sigma_error=0.2
+	sigma_error=error_sigma
 	pinv_lap=np.linalg.pinv(laplacian)
 	cov=pinv_lap+sigma_error*np.identity(node_num)
 	signals=np.random.multivariate_normal(mean, cov, size=signal_num)
