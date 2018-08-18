@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import TruncatedSVD
 import networkx as nx 
 import os 
-os.chdir('D:/Research/Graph Learning/code/')
+os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
 import pandas as pd 
 import csv
 from sklearn.metrics.pairwise import cosine_similarity, rbf_kernel
@@ -39,7 +39,7 @@ class Gl_sigrep():
 		self.K=2*np.ones(self.ncols)
 		self.d=np.dot(self.K, self.w)
 		self.eplison=10**(-5)
-		self.max_iteration=3000
+		self.max_iteration=200
 		self.y=None
 		self.y_bar=None
 		self.p=None
@@ -61,7 +61,7 @@ class Gl_sigrep():
 
 			self.p=np.fmin(self.max_w, np.fmax(0, self.y-2*self.gamma*self.z))
 			self.p_bar=self.y_bar-self.gamma*self.node_num
-			self.q=self.p-self.gamma*(2*self.alpha*(2*self.p+np.dot(self.S.T, np.dot(self.S, self.w)))+2*self.p)
+			self.q=self.p-self.gamma*(self.alpha*(2*self.p+np.dot(self.S.T, np.dot(self.S, self.p)))+2*self.p)
 			self.q_bar=self.p_bar+self.gamma*(2*np.sum(self.p))
 
 			w_i_1=self.w.copy()

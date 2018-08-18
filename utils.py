@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import TruncatedSVD
 import networkx as nx 
 import os 
-os.chdir('D:/Research/Graph Learning/code/')
+os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
 import pandas as pd 
 import csv
 from sklearn.metrics.pairwise import cosine_similarity, rbf_kernel
@@ -17,7 +17,7 @@ from scipy.sparse import csgraph
 import seaborn as sns
 from synthetic_data import *
 from scipy.optimize import minimize
-
+from sklearn.preprocessing import MinMaxScaler
 def sum_squareform(n):
 	#sum operator that find degree from upper triangle
 	ncols=int((n-1)*n/2)
@@ -49,6 +49,25 @@ def vector_form(W,n):
 	# the triangle-upper 
 	return w
 
+def matrix_form(w, n):
+	W=np.zeros((n,n))
+	W[np.triu_indices(n,1)]=w
+	for i in range(n):
+		for j in range(n):
+			W[j,i]=W[i,j]
+	return W
+
+
+def scale_0_1(w):
+	mms=MinMaxScaler()
+	norm_w=mms.fit_transform(w.reshape(-1,1))
+	return norm_w.ravel()
+
+def norm_W(W,n):
+	w=vector_form(W,n)
+	norm_w=scale_0_1(w)
+	norm_W=matrix_form(norm_w,n)
+	return norm_W
 
 def lin_map(x, lims_out, lims_in):
 	a=lims_in[0]
@@ -70,4 +89,8 @@ def filter_graph_to_knn(adj_matrix, node_num, k=10):
 	return adj_matrix
 
 
+def filter_graph_to_rbf(adj_matrix, node_num, thres=0.5):
+	adj_matrix[adj_matrix<thres]=0
+	np.fill_diagonal(adj_matrix,0)
+	return adj_matrix
 

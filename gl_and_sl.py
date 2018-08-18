@@ -3,7 +3,7 @@ import numpy as np
 from matplotlib.pylab import *
 import matplotlib.pyplot as plt
 import os 
-os.chdir('D:/Research/Graph Learning/code/')
+os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
 from sklearn.metrics.pairwise import rbf_kernel
 import seaborn as sns
 from synthetic_data import *
@@ -13,13 +13,13 @@ from pygsp import graphs, plotting, filters
 import pyunlocbox
 import networkx as nx 
 from gl_sigrep import Gl_sigrep
-path='D:/Research/Graph Learning/code/results/test_results2/'
+path='C:/Kaige_Research/Graph Learning/graph_learning_code/results/test_results2/'
 timeRun = datetime.datetime.now().strftime('_%m_%d_%H_%M_%S') 
 
 node_num=20
 signal_num=100
 error_sigma=0.1
-adj_matrix, knn_lap, knn_pos=knn_graph(node_num)
+adj_matrix, knn_lap, knn_pos=rbf_graph(node_num)
 X, X_noise, item_features=generate_signal(signal_num, node_num, knn_pos, error_sigma)
 #smooth_signal=f4(knn_pos[:,0], knn_pos[:,1])
 
