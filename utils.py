@@ -57,7 +57,6 @@ def matrix_form(w, n):
 			W[j,i]=W[i,j]
 	return W
 
-
 def scale_0_1(w):
 	mms=MinMaxScaler()
 	norm_w=mms.fit_transform(w.reshape(-1,1))
@@ -79,7 +78,7 @@ def lin_map(x, lims_out, lims_in):
 	return y
 
 
-def filter_graph_to_knn(adj_matrix, node_num, k=10):
+def filter_graph_to_knn(adj_matrix, node_num, k=5):
 	for i in range(node_num):
 		rbf_row=adj_matrix[i,:]
 		neighbors=np.argsort(rbf_row)[:node_num-k]

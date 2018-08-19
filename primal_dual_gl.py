@@ -23,7 +23,7 @@ from utils import sum_squareform, vector_form, lin_map
 
 
 class Primal_dual_gl():
-	def __init__(self, node_num, Z, alpha=5, beta=0.1, c=0):
+	def __init__(self, node_num, Z, alpha=0.1, beta=1, c=0):
 		self.node_num=node_num
 		self.ncols=int(node_num*(node_num-1)/2)
 		self.Z=Z
@@ -47,7 +47,7 @@ class Primal_dual_gl():
 		self.max_w=np.inf
 		self.mu=2*(self.beta+self.c)+np.sqrt(2*(self.node_num-1))
 		self.ep=lin_map(0.0, [0,1/(1+self.mu)], [0,1])
-		self.gamma=lin_map(0.5, [self.ep, (1-self.ep)/self.mu], [0,1])
+		self.gamma=lin_map(0.2, [self.ep, (1-self.ep)/self.mu], [0,1])
 
 	def run(self, real_w):
 		error_list=[]
@@ -78,13 +78,11 @@ class Primal_dual_gl():
 			else:
 				pass 
 			index=np.triu_indices(self.node_num,1)
-			self.W[index]=1-self.w
+			self.W[index]=self.w
 			for i in range(self.node_num):
 				for j in range(self.node_num):
 					self.W[j,i]=self.W[i,j]
 
-#			print('w_ratio', w_ratio)
-#			print('d_ratio', d_ratio)
 			error=np.linalg.norm(self.W-real_w)
 			error_list.extend([error])
 		return self.W, error_list

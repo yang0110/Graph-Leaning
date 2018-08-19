@@ -39,7 +39,7 @@ class Gl_sigrep():
 		self.K=2*np.ones(self.ncols)
 		self.d=np.dot(self.K, self.w)
 		self.eplison=10**(-5)
-		self.max_iteration=200
+		self.max_iteration=2000
 		self.y=None
 		self.y_bar=None
 		self.p=None
@@ -80,7 +80,7 @@ class Gl_sigrep():
 			else:
 				pass 
 			index=np.triu_indices(self.node_num,1)
-			self.W[index]=1-self.w
+			self.W[index]=self.w
 			for i in range(self.node_num):
 				for j in range(self.node_num):
 					self.W[j,i]=self.W[i,j]

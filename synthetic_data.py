@@ -20,16 +20,18 @@ import seaborn as sns
 from sklearn.datasets import make_blobs
 
 def rbf_graph(node_num, dimension=2, threshold=0.5):
-	features=np.random.uniform(low=0, high=1, size=(node_num, dimension))
+	RS=np.random.RandomState(seed=100)
+	features=RS.uniform(low=0, high=1, size=(node_num, dimension))
 	adj_matrix=rbf_kernel(features, gamma=(1)/(2*(0.5)**2))
-	adj_matrix[adj_matrix<threshold]=0.0
+	#adj_matrix[adj_matrix<threshold]=0.0
 	np.fill_diagonal(adj_matrix,0)
 	laplacian=csgraph.laplacian(adj_matrix, normed=False)
 	return adj_matrix, laplacian, features
 
 
-def knn_graph(node_num, dimension=2, k=10):
-	features=np.random.uniform(low=0, high=1, size=(node_num, dimension))
+def knn_graph(node_num, dimension=2, k=5):
+	RS=np.random.RandomState(seed=100)
+	features=RS.uniform(low=0, high=1, size=(node_num, dimension))
 	adj_matrix=rbf_kernel(features, gamma=(1)/(2*(0.5)**2))
 	for i in range(node_num):
 		rbf_row=adj_matrix[i,:]
@@ -74,9 +76,10 @@ def generate_signal_gl_siprep(signal_num, node_num, laplacian, error_sigma):
 	return signals
 
 def generate_signal(signal_num, node_num, node_features, error_sigma):
-	item_f=np.random.normal(size=(signal_num, node_features.shape[1]))
+	RS=np.random.RandomState(seed=100)
+	item_f=RS.normal(size=(signal_num, node_features.shape[1]))
 	signals=np.dot(node_features, item_f.T).T
-	noise=np.random.normal(scale=error_sigma, size=(signals.shape[0], signals.shape[1]))
+	noise=RS.normal(scale=error_sigma, size=(signals.shape[0], signals.shape[1]))
 	noise_signals=signals+noise
 	return signals, noise_signals, item_f
 
