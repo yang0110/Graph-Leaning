@@ -23,7 +23,7 @@ from utils import sum_squareform, vector_form, lin_map
 
 
 class Primal_dual_gl():
-	def __init__(self, node_num, Z, alpha=0.1, beta=1, c=0):
+	def __init__(self, node_num, Z, alpha=0.1, beta=1, step_size=0.5):
 		self.node_num=node_num
 		self.ncols=int(node_num*(node_num-1)/2)
 		self.Z=Z
@@ -33,9 +33,9 @@ class Primal_dual_gl():
 		self.W=np.zeros((node_num,node_num))
 		self.w=np.zeros(self.ncols)
 		self.w_0=np.zeros(self.ncols)
-		self.c=c
 		self.S=sum_squareform(node_num)
 		self.d=np.dot(self.S, self.w)
+		self.step_size=step_size
 		self.eplison=10**(-5)
 		self.max_iteration=3000
 		self.y=None
@@ -44,10 +44,11 @@ class Primal_dual_gl():
 		self.p_bar=None
 		self.q=None
 		self.q_bar=None
-		self.max_w=np.inf
+		self.c=0
+		self.max_w=1.0
 		self.mu=2*(self.beta+self.c)+np.sqrt(2*(self.node_num-1))
 		self.ep=lin_map(0.0, [0,1/(1+self.mu)], [0,1])
-		self.gamma=lin_map(0.2, [self.ep, (1-self.ep)/self.mu], [0,1])
+		self.gamma=lin_map(self.step_size, [self.ep, (1-self.ep)/self.mu], [0,1])
 
 	def run(self, real_w):
 		error_list=[]

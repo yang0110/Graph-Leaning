@@ -16,50 +16,83 @@ from gl_sigrep import Gl_sigrep
 path='C:/Kaige_Research/Graph Learning/graph_learning_code/results/test_results2/'
 timeRun = datetime.datetime.now().strftime('_%m_%d_%H_%M_%S') 
 
-node_num=5
+node_num=20
 signal_num=100
-error_sigma=0.01
-adj_matrix, knn_lap, knn_pos=knn_graph(node_num)
-norm_adj_matrix=norm_W(adj_matrix, node_num)
+error_sigma=0.1
+adj_matrix, knn_lap, knn_pos=rbf_graph(node_num)
 X, X_noise, item_features=generate_signal(signal_num, node_num, knn_pos, error_sigma)
-signals=X_noise
-
 newpath=path+'error_sigma_%s'%(int(error_sigma*100))+str(timeRun)+'/'
 if not os.path.exists(newpath):
 	    os.makedirs(newpath)
 
+signals=X_noise
 
+signal_error_reference=[]
 signal_error_list=[]
 graph_error_list=[]
-for i in range(10):
+trace1=[]
+trace2=[]
+trace3=[]
+trace4=[]
+trace5=[]
+for i in range(100):
 	print('i', i)
 	Z=euclidean_distances(signals.T, squared=True)
 	np.fill_diagonal(Z, 0)
+	Z=norm_W(Z, node_num)
+
 	##graph learning 
-	alpha=0.1  ## bigger alpha --- bigger weights
-	beta=0.5   ### bigger beta --- more dense
-	primal_gl=Primal_dual_gl(node_num, Z, alpha=alpha, beta=beta)
+	alpha=15 ## bigger alpha --- bigger weights
+	beta=0.1 ### bigger beta --- more dense
+	theta=0.012
+	primal_gl=Gl_sigrep(node_num, Z, alpha=alpha, beta=beta, step_size=0.5)
+	#primal_gl=Primal_dual_gl(node_num, Z, alpha=alpha, beta=beta, step_size=0.05)
+
 	primal_adj, error=primal_gl.run(adj_matrix)
-	norm_primal_adj=norm_W(primal_adj,node_num)
+
 	laplacian=csgraph.laplacian(primal_adj, normed=False)
-	signals=np.dot(signals, np.linalg.inv((np.identity(node_num)+laplacian)))
+	signals=np.dot(signals, np.linalg.inv((np.identity(node_num)+theta*laplacian)))
+
 
 	#print('adj_matrix \n', adj_matrix)
-	#print('norm_primal_adj \n', norm_primal_adj)
 	#print('primal_adj \n', primal_adj)
 
 	print('X\n', X[0,:])
 	print('signals\n', signals[0,:])
 
+	signal_error_ref=np.linalg.norm(X_noise-X)
 	signal_error=np.linalg.norm(signals-X)
 	graph_error=np.linalg.norm(primal_adj-adj_matrix)
+	signal_error_reference.extend([signal_error_ref])
 	signal_error_list.extend([signal_error])
 	graph_error_list.extend([graph_error])
 
+	tr1=np.trace(np.dot(signals, np.dot(laplacian, signals.T) ))
+	tr2=np.trace(np.dot(signals, np.dot(knn_lap, signals.T)))
+	trace1.extend([tr1])
+	trace2.extend([tr2])
+
+	tr3=np.trace(np.dot(X, np.dot(laplacian, X.T) ))
+	tr4=np.trace(np.dot(X, np.dot(knn_lap, X.T)))
+	trace3.extend([tr3])
+	trace4.extend([tr4])
+
+	tr5=np.trace(np.dot(X_noise, np.dot(knn_lap, X_noise.T)))
+	trace5.extend([tr5])
+
+	# fig,(ax1, ax2)=plt.subplots(1,2, figsize=(4,2))
+	# ax1.pcolor(adj_matrix, cmap='RdBu')
+	# ax1.set_title('real W')
+	# ax2.pcolor(primal_adj, cmap='RdBu')
+	# ax2.set_title('learned w')
+	# plt.show()
 
 
-plt.plot(signal_error_list)
+
+plt.plot(signal_error_reference, label='X_noise/X')
+plt.plot(signal_error_list, label='Signal/X')
 plt.title('signal error', fontsize=12)
+plt.legend(loc=1)
 plt.show()
 
 plt.plot(graph_error_list)
@@ -67,11 +100,20 @@ plt.title('graph error', fontsize=12)
 plt.show()
 
 
+plt.plot(trace1, label='signal/lap')
+plt.plot(trace2, label='signal/knn')
+plt.plot(trace3, label='X/lap')
+plt.plot(trace4, label='X/knn')
+plt.plot(trace5, label='X_noise/knn')
+plt.legend(loc=1)
+plt.show()
+
 
 real_signal=X[0,:]
 learned_signal=signals[0,:]
 
 real_graph=create_networkx_graph(node_num, adj_matrix)
+edge_num=real_graph.number_of_edges()
 edge_weights=adj_matrix[np.triu_indices(node_num,0)]
 edge_color=edge_weights[edge_weights>0]
 edge_alpha=edge_color
@@ -81,25 +123,28 @@ plt.axis('off')
 plt.show()
 
 
-primal_adj=filter_graph_to_knn(primal_adj, node_num)
-norm_primal_adj=norm_W(primal_adj, node_num)
+#primal_adj=filter_graph_to_knn(primal_adj, node_num)
+primal_adj[primal_adj<10**(-4)]=0
 learned_graph=create_networkx_graph(node_num, primal_adj)
+edge_num=learned_graph.number_of_edges()
 edge_weights=primal_adj[np.triu_indices(node_num,0)]
 edge_color=edge_weights[edge_weights>0]
 edge_alpha=edge_color
 nodes=nx.draw_networkx_nodes(learned_graph, knn_pos, node_color=learned_signal,node_size=100, cmap=plt.cm.Reds)
-edges=nx.draw_networkx_edges(learned_graph, knn_pos, width=1.0, alpha=1.0, edge_color=edge_color, edge_cmap=plt.cm.Blues,vmin=0, vmax=1)
+edges=nx.draw_networkx_edges(learned_graph, knn_pos, width=1.0, alpha=1.0, edge_color=edge_color, edge_cmap=plt.cm.Blues,)
 plt.axis('off')
 plt.show()
 
-
-fig,(ax1, ax2)=plt.subplots(1,2, figsize=(4,2))
-ax1.pcolor(adj_matrix, cmap='RdBu')
-ax1.set_title('real W')
-ax2.pcolor(primal_adj, cmap='RdBu')
-ax2.set_title('learned w')
+plt.plot(error)
+plt.title('graph learning error', fontsize=12)
 plt.show()
 
 
-
-
+norm_adj_matrix=norm_W(adj_matrix, node_num)
+norm_primal_adj=norm_W(primal_adj, node_num)
+fig,(ax1, ax2)=plt.subplots(1,2, figsize=(4,2))
+ax1.pcolor(norm_adj_matrix, cmap='RdBu')
+ax1.set_title('real W')
+ax2.pcolor(norm_primal_adj, cmap='RdBu')
+ax2.set_title('learned w')
+plt.show()

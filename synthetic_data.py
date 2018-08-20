@@ -23,7 +23,7 @@ def rbf_graph(node_num, dimension=2, threshold=0.5):
 	RS=np.random.RandomState(seed=100)
 	features=RS.uniform(low=0, high=1, size=(node_num, dimension))
 	adj_matrix=rbf_kernel(features, gamma=(1)/(2*(0.5)**2))
-	#adj_matrix[adj_matrix<threshold]=0.0
+	adj_matrix[adj_matrix<threshold]=0.0
 	np.fill_diagonal(adj_matrix,0)
 	laplacian=csgraph.laplacian(adj_matrix, normed=False)
 	return adj_matrix, laplacian, features
