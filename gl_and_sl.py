@@ -42,8 +42,8 @@ Z=norm_W(Z, node_num)
 alpha=1
 beta=0.2
 theta=0.01
-primal_gl=Primal_dual_gl(node_num, Z, alpha=alpha, beta=beta)
-#primal_gl=Gl_sigrep(node_num, Z, alpha=alpha, beta=beta)
+#primal_gl=Primal_dual_gl(node_num, Z, alpha=alpha, beta=beta)
+primal_gl=Gl_sigrep(node_num, Z, alpha=alpha, beta=beta)
 primal_adj, error=primal_gl.run(adj_matrix)
 
 laplacian=csgraph.laplacian(primal_adj, normed=False)

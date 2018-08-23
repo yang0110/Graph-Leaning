@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import os 
 os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
 from sklearn.metrics.pairwise import rbf_kernel, euclidean_distances
-import seaborn as sns
+#import seaborn as sns
 from synthetic_data import *
 from primal_dual_gl import Primal_dual_gl 
 from utils import *

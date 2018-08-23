@@ -5,17 +5,18 @@ import os
 os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
 from sklearn.metrics.pairwise import rbf_kernel, euclidean_distances
 import seaborn as sns
+sns.set_style("white")
 from synthetic_data import *
 from utils import *
 from pygsp import graphs, plotting, filters
 import pyunlocbox
 import networkx as nx 
 from gl_algorithms import *
-path='C:/Kaige_Research/Graph Learning/graph_learning_code/results/test_results2/'
+path='C:/Kaige_Research/Graph Learning/graph_learning_code/results/'
 timeRun = datetime.datetime.now().strftime('_%m_%d_%H_%M_%S') 
 
-node_num=40
-signal_num=20
+node_num=20
+signal_num=100
 
 ## graphs
 rgg_adj, rgg_lap, rgg_pos=RGG(node_num)
@@ -107,13 +108,14 @@ gl_adj_error_list=[]
 gl_signal_error_list=[]
 knn_adj_error_list=[]
 knn_signal_error_list=[]
-for n in np.arange(signal_num)+1:
+x_ticks=[]
+for n in np.arange(1, signal_num, 5):
 	print('Signal Number ~~~~~~~~~~~~~~~~~~ ', n)
 	iteration=5
 	input_signal=noisy_signal[:n]
 	real_signal=signal[:n]
-	signal_num=n
-	p_adj, p_signal=Primal_dual_gl_loop(node_num, input_signal, iteration, alpha=1, beta=1, theta=0.01, step_size=0.05)
+	signal_num=input_signal.shape[0]
+	p_adj, p_signal=Primal_dual_gl_loop(node_num, input_signal, iteration, alpha=1, beta=0.1, theta=0.01, step_size=0.05)
 	learned_knn_adj, learned_knn_lap=learn_knn_graph(input_signal, node_num)
 	learned_knn_signal=learn_knn_signal(learned_knn_adj, input_signal, signal_num, node_num)
 
@@ -126,24 +128,35 @@ for n in np.arange(signal_num)+1:
 	gl_signal_error_list.extend([gl_signal_error])
 	knn_adj_error_list.extend([knn_adj_error])
 	knn_signal_error_list.extend([knn_signal_error])
+	x_ticks.extend([n])
 
 
-plt.plot(gl_adj_error_list, label='GL')
-plt.plot(knn_adj_error_list, label='KNN')
+newpath=path+'node_num_%s_signal_num_%s_error_%s'%(node_num, signal_num, int(error_sigma*100))+str(timeRun)+'/'
+if not os.path.exists(newpath):
+	    os.makedirs(newpath)
+
+plt.plot(x_ticks, gl_adj_error_list, label='GL')
+plt.plot(x_ticks, knn_adj_error_list, label='KNN')
+plt.xlabel('Signal Number')
+plt.ylabel('Total L2 Error')
 plt.title('Graph Error')
 plt.legend(loc=1)
+plt.savefig(newpath+'adj_error_n_s_e_%s_%s_%s'%(node_num, signal_num, int(error_sigma*100))+'.png', dpi=100)
 plt.show()
 
-plt.plot(gl_signal_error_list, label='GL')
-plt.plot(knn_signal_error_list, label='KNN')
+plt.plot(x_ticks, gl_signal_error_list, label='GL')
+plt.plot(x_ticks, knn_signal_error_list, label='KNN')
+plt.xlabel('Signal Number')
+plt.ylabel('Total L2 Error')
 plt.title('Signal Error')
 plt.legend(loc=1)
+plt.savefig(newpath+'signal_error_n_s_e_%s_%s_%s'%(node_num, signal_num, int(error_sigma*100))+'.png', dpi=100)
 plt.show()
 
 
 real_adj_filtered=filter_graph_to_knn(real_adj, node_num)
 p_adj_filtered=filter_graph_to_knn(p_adj, node_num)
-plot_graph_and_signal(real_adj_filtered, signal[0], rbf_pos, node_num, title='Real Graph and Signal')
-plot_graph_and_signal(real_adj_filtered, noisy_signal[0], rbf_pos, node_num, title='')
-plot_graph_and_signal(p_adj_filtered, p_signal[0], rbf_pos, node_num, title='')
-plot_graph_and_signal(learned_knn_adj, learned_knn_signal[0], rbf_pos, node_num, title='')
+plot_graph_and_signal(real_adj_filtered, signal[0], rbf_pos, node_num,error_sigma, title='Real', path=newpath)
+plot_graph_and_signal(real_adj_filtered, noisy_signal[0], rbf_pos, node_num,error_sigma, title='Noisy', path=newpath)
+plot_graph_and_signal(p_adj_filtered, p_signal[0], rbf_pos, node_num,error_sigma, title='GL', path=newpath)
+plot_graph_and_signal(learned_knn_adj, learned_knn_signal[0], rbf_pos, node_num,error_sigma, title='KNN', path=newpath)

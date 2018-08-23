@@ -16,7 +16,7 @@ from sklearn.metrics.pairwise import cosine_similarity, rbf_kernel
 from sklearn.preprocessing import StandardScaler, Normalizer, MinMaxScaler
 from collections import Counter
 from scipy.sparse import csgraph
-import seaborn as sns
+#import seaborn as sns
 from sklearn.datasets import make_blobs
 from utils import *
 

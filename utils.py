@@ -14,7 +14,7 @@ import csv
 from sklearn.metrics.pairwise import cosine_similarity, rbf_kernel
 from collections import Counter
 from scipy.sparse import csgraph
-import seaborn as sns
+#import seaborn as sns
 from scipy.optimize import minimize
 from sklearn.preprocessing import MinMaxScaler
 def sum_squareform(n):
@@ -116,7 +116,7 @@ def create_networkx_graph(node_num, adj_matrix):
 				pass
 	return G
 
-def plot_graph_and_signal(adj_matrix, signal, pos, node_num, title='Graph'):
+def plot_graph_and_signal(adj_matrix, signal, pos, node_num, error_sigma, title='Graph', path='newpath'):
 	graph=create_networkx_graph(node_num, adj_matrix)
 	edge_weight=adj_matrix[np.triu_indices(node_num, 1)]
 	edge_color=edge_weight[edge_weight>0]
@@ -128,5 +128,6 @@ def plot_graph_and_signal(adj_matrix, signal, pos, node_num, title='Graph'):
 		edges=nx.draw_networkx_edges(graph, pos, width=1.0, alpha=1, edge_color=edge_color, edge_cmap=plt.cm.Blues, vmin=0, vmax=1)
 	plt.axis('off')
 	plt.title(title)
+	plt.savefig(path+title+'graph_signal_n_s_e_%s_%s_%s'%(node_num, signal.shape[0], int(error_sigma*100)) +'.png', dpi=200)
 	plt.show()
 
