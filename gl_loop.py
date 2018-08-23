@@ -21,6 +21,7 @@ signal_num=100
 error_sigma=0.1
 adj_matrix, knn_lap, knn_pos=rbf_graph(node_num)
 X, X_noise, item_features=generate_signal(signal_num, node_num, knn_pos, error_sigma)
+
 newpath=path+'error_sigma_%s'%(int(error_sigma*100))+str(timeRun)+'/'
 if not os.path.exists(newpath):
 	    os.makedirs(newpath)
@@ -35,23 +36,25 @@ trace2=[]
 trace3=[]
 trace4=[]
 trace5=[]
-for i in range(100):
+smoothness=[]
+primal_adj=np.identity(node_num)
+for i in range(5):
 	print('i', i)
 	Z=euclidean_distances(signals.T, squared=True)
 	np.fill_diagonal(Z, 0)
 	Z=norm_W(Z, node_num)
 
 	##graph learning 
-	alpha=15 ## bigger alpha --- bigger weights
-	beta=0.1 ### bigger beta --- more dense
-	theta=0.012
-	primal_gl=Gl_sigrep(node_num, Z, alpha=alpha, beta=beta, step_size=0.5)
-	#primal_gl=Primal_dual_gl(node_num, Z, alpha=alpha, beta=beta, step_size=0.05)
-
+	alpha=1## bigger alpha --- bigger weights
+	beta=0.2  ### bigger beta --- more dense ## For GL_sigrep beta is not used.
+	theta=0.01
+	#primal_gl=Gl_sigrep(node_num, Z, alpha=alpha, beta=beta, step_size=0.5)
+	primal_gl=Primal_dual_gl(node_num, Z, alpha=alpha, beta=beta, step_size=0.01)
 	primal_adj, error=primal_gl.run(adj_matrix)
-
 	laplacian=csgraph.laplacian(primal_adj, normed=False)
 	signals=np.dot(signals, np.linalg.inv((np.identity(node_num)+theta*laplacian)))
+	smooth=calculate_smoothness(signals, laplacian)
+	smoothness.append(smooth)
 
 
 	#print('adj_matrix \n', adj_matrix)
@@ -80,12 +83,8 @@ for i in range(100):
 	tr5=np.trace(np.dot(X_noise, np.dot(knn_lap, X_noise.T)))
 	trace5.extend([tr5])
 
-	# fig,(ax1, ax2)=plt.subplots(1,2, figsize=(4,2))
-	# ax1.pcolor(adj_matrix, cmap='RdBu')
-	# ax1.set_title('real W')
-	# ax2.pcolor(primal_adj, cmap='RdBu')
-	# ax2.set_title('learned w')
-	# plt.show()
+ 
+
 
 
 
@@ -100,16 +99,24 @@ plt.title('graph error', fontsize=12)
 plt.show()
 
 
-plt.plot(trace1, label='signal/lap')
+#plt.plot(trace1, label='signal/lap')
 plt.plot(trace2, label='signal/knn')
-plt.plot(trace3, label='X/lap')
+#plt.plot(trace3, label='X/lap')
 plt.plot(trace4, label='X/knn')
 plt.plot(trace5, label='X_noise/knn')
 plt.legend(loc=1)
 plt.show()
 
 
+s=np.array(smoothness)
+for i in range(len(s)):
+	plt.plot(s[i], label='%s'%(i))
+plt.legend(loc=1)
+plt.show()
+
+
 real_signal=X[0,:]
+#noise_signal=X
 learned_signal=signals[0,:]
 
 real_graph=create_networkx_graph(node_num, adj_matrix)
@@ -121,6 +128,7 @@ nodes=nx.draw_networkx_nodes(real_graph, knn_pos, node_color=real_signal,node_si
 edges=nx.draw_networkx_edges(real_graph, knn_pos, width=1.0, alpha=1.0, edge_color=edge_color, edge_cmap=plt.cm.Blues)
 plt.axis('off')
 plt.show()
+
 
 
 #primal_adj=filter_graph_to_knn(primal_adj, node_num)
@@ -140,11 +148,9 @@ plt.title('graph learning error', fontsize=12)
 plt.show()
 
 
-norm_adj_matrix=norm_W(adj_matrix, node_num)
-norm_primal_adj=norm_W(primal_adj, node_num)
 fig,(ax1, ax2)=plt.subplots(1,2, figsize=(4,2))
-ax1.pcolor(norm_adj_matrix, cmap='RdBu')
+ax1.pcolor(adj_matrix, cmap='RdBu')
 ax1.set_title('real W')
-ax2.pcolor(norm_primal_adj, cmap='RdBu')
+ax2.pcolor(primal_adj, cmap='RdBu')
 ax2.set_title('learned w')
 plt.show()

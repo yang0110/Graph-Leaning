@@ -1,4 +1,3 @@
-### GL-siprep is the graph learning model proposed by xiaowen dong 
 import numpy as np
 import random
 from random import choice
@@ -38,7 +37,7 @@ class Gl_sigrep():
 		self.v=2*np.sum(self.w)
 		self.eplison=10**(-5)
 		self.step_size=step_size
-		self.max_iteration=2000
+		self.max_iteration=5000
 		self.y=None
 		self.y_bar=None
 		self.p=None
@@ -50,7 +49,7 @@ class Gl_sigrep():
 		self.ep=lin_map(0.0, [0,1/(1+self.mu)], [0,1])
 		self.gamma=lin_map(self.step_size, [self.ep, (1-self.ep)/self.mu], [0,1])
 
-	def run(self, real_w):
+	def run(self):
 		error_list=[]
 		for i in range(self.max_iteration):
 			#print('iteration', i)
@@ -75,7 +74,7 @@ class Gl_sigrep():
 			v_diff=np.linalg.norm(self.v-v_i_1)
 			v_ratio=v_diff/np.linalg.norm(v_i_1)
 			if (w_ratio<self.eplison) and (v_ratio<self.eplison):
-			 	break 
+				break 
 			else:
 				pass 
 			index=np.triu_indices(self.node_num,1)
@@ -86,6 +85,6 @@ class Gl_sigrep():
 
 #			print('w_ratio', w_ratio)
 #			print('v_ratio', v_ratio)
-			error=np.linalg.norm(self.W-real_w)
+			error=np.linalg.norm(self.W-self.Z)
 			error_list.extend([error])
 		return self.W, error_list

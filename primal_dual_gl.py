@@ -50,7 +50,7 @@ class Primal_dual_gl():
 		self.ep=lin_map(0.0, [0,1/(1+self.mu)], [0,1])
 		self.gamma=lin_map(self.step_size, [self.ep, (1-self.ep)/self.mu], [0,1])
 
-	def run(self, real_w):
+	def run(self):
 		error_list=[]
 		for i in range(self.max_iteration):
 			#print('iteration', i)
@@ -84,6 +84,6 @@ class Primal_dual_gl():
 				for j in range(self.node_num):
 					self.W[j,i]=self.W[i,j]
 
-			error=np.linalg.norm(self.W-real_w)
+			error=np.linalg.norm(self.W-self.Z)
 			error_list.extend([error])
 		return self.W, error_list

@@ -18,11 +18,15 @@ from sklearn.preprocessing import StandardScaler, Normalizer, MinMaxScaler
 path='C:/Kaige_Research/Graph Learning/graph_learning_code/results/test_results2/'
 timeRun = datetime.datetime.now().strftime('_%m_%d_%H_%M_%S') 
 
-node_num=10
-signal_num=10
+node_num=20
+signal_num=100
 error_sigma=0.1
 adj_matrix, knn_lap, knn_pos=rbf_graph(node_num)
 X, X_noise, item_features=generate_signal(signal_num, node_num, knn_pos, error_sigma)
+#original_signal=original_signal(node_num)
+#X=Heat_diffusion_signal(original_signal, adj_matrix)
+#X=Tikhonov_signal(original_signal, adj_matrix)
+#X=Generative_model_signal(original_signal, adj_matrix)
 
 newpath=path+'error_%s'%(int(error_sigma*100))+str(timeRun)+'/'
 if not os.path.exists(newpath):
@@ -35,10 +39,11 @@ np.fill_diagonal(Z, 0)
 Z=norm_W(Z, node_num)
 
 
-alpha=0.1
-beta=1
+alpha=1
+beta=0.2
 theta=0.01
-primal_gl=Primal_dual_gl(node_num, Z, alpha, beta)
+primal_gl=Primal_dual_gl(node_num, Z, alpha=alpha, beta=beta)
+#primal_gl=Gl_sigrep(node_num, Z, alpha=alpha, beta=beta)
 primal_adj, error=primal_gl.run(adj_matrix)
 
 laplacian=csgraph.laplacian(primal_adj, normed=False)
