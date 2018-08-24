@@ -1,24 +1,16 @@
 import numpy as np
 import random
 from random import choice
-import datetime
-from matplotlib.pylab import *
-import argparse
-import matplotlib.pyplot as plt
-from sklearn.decomposition import TruncatedSVD
 import networkx as nx 
 import os 
 os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
-from community import community_louvain
 import pandas as pd 
-import csv
 from sklearn.metrics.pairwise import cosine_similarity, rbf_kernel
 from sklearn.preprocessing import StandardScaler, Normalizer, MinMaxScaler
-from collections import Counter
 from scipy.sparse import csgraph
-#import seaborn as sns
 from sklearn.datasets import make_blobs
 from utils import *
+from knn_models import *
 
 def RGG(node_num, dimension=2):
 	RS=np.random.RandomState(seed=100)
@@ -66,10 +58,11 @@ def ba_graph(node_num, seed=2018):
 	return adj_matrix, laplacian	
 
 
-def generate_signal_gl_siprep(signal_num, node_num, laplacian):
+def generate_signal_gl_siprep(signal_num, node_num, laplacian, error_sigma):
 	mean=np.zeros(node_num)
-	pinv_lap=np.linalg.pinv(laplacian)
-	cov=pinv_lap
+	normed_lap=normalized_trace(laplacian, node_num)
+	pinv_lap=np.linalg.pinv(normed_lap)
+	cov=pinv_lap+error_sigma*np.identity(node_num)
 	signals=np.random.multivariate_normal(mean, cov, size=signal_num)
 	return signals
 

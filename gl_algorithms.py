@@ -22,6 +22,7 @@ def Primal_dual_gl_loop(node_num, signal, iteration, alpha=1, beta=0.2, theta=0.
 		Z=norm_W(Z, node_num)
 		primal_gl=Primal_dual_gl(node_num, Z, alpha=alpha, beta=beta, step_size=step_size)
 		primal_adj, error=primal_gl.run()
+		print('graph error', error[-1])
 		lap=csgraph.laplacian(primal_adj, normed=False)
 		signal=np.dot(signal, np.linalg.inv((np.identity(node_num)+theta*lap)))
 	return primal_adj, signal
@@ -35,6 +36,7 @@ def Siprep_gl_loop(node_num, signal, iteration, alpha=10, beta=0.2, theta=0.01, 
 		Z=norm_W(Z, node_num)
 		gl=Gl_sigrep(node_num, Z, alpha=alpha, beta=beta, step_size=step_size)
 		learned_adj, error=gl.run()
+		print('graph error', error[-1])
 		lap=csgraph.laplacian(learned_adj, normed=False)
 		signal=np.dot(signal, np.linalg.inv((np.identity(node_num)+theta*lap)))
 	return learned_adj, signal
