@@ -3,7 +3,7 @@ import random
 from random import choice
 import networkx as nx 
 import os 
-os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
+os.chdir('D:/Research/Graph Learning/code/')
 import pandas as pd 
 from sklearn.metrics.pairwise import cosine_similarity, rbf_kernel
 from sklearn.preprocessing import StandardScaler, Normalizer, MinMaxScaler
@@ -19,6 +19,14 @@ def RGG(node_num, dimension=2):
 	np.fill_diagonal(adj_matrix,0)
 	laplacian=csgraph.laplacian(adj_matrix, normed=False)
 	return adj_matrix, laplacian, features
+def blob_graph(node_num, cluster_num=4, scale=0.1):
+	x,y=make_blobs(n_samples=node_num, n_features=2, centers=cluster_num, cluster_std=scale, center_box=(0,1), shuffle=False, random_state=20)
+	adj=rbf_kernel(x)
+	np.fill_diagonal(adj,0)
+	pos=x
+	lap=csgraph.laplacian(adj,normed=False)
+	return adj, lap, pos
+
 
 def rbf_graph(node_num, dimension=2, threshold=0.5):
 	RS=np.random.RandomState(seed=100)
@@ -88,6 +96,18 @@ def f4(x,y):
 
 def f5(x,y):
 	return (x-0.5)+(y-0.5)
+
+def circle(signal_num, node_num, pos):
+	centers=np.random.uniform(size=(signal_num,2))
+	y_s=[]
+	for i in range(signal_num):
+		y=np.sqrt((pos[:,0]-centers[i][0])**2+(pos[:,1]-centers[i][1])**2)
+		y_s.append(y)
+	y_s=np.array(y_s).reshape(signal_num, node_num)
+	return y_s
+
+
+
 
 def Tikhonov_filter(x, alpha=10):
 	return 1/(1+alpha*x)

@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib.pylab import *
 import matplotlib.pyplot as plt
 import os 
-os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
+os.chdir('D:/Research/Graph Learning/code/')
 from sklearn.metrics.pairwise import rbf_kernel, euclidean_distances
 import seaborn as sns
 sns.set_style("white")
@@ -12,11 +12,11 @@ from pygsp import graphs, plotting, filters
 import pyunlocbox
 import networkx as nx 
 from gl_algorithms import *
-path='C:/Kaige_Research/Graph Learning/graph_learning_code/results/'
+path='D:/Research/Graph Learning/code/results/'
 timeRun = datetime.datetime.now().strftime('_%m_%d_%H_%M_%S') 
 
-node_num=100
-signal_num=100
+node_num=20
+signal_num=20
 error_sigma=0.1
 
 ## graphs
