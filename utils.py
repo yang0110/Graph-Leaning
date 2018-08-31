@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import TruncatedSVD
 import networkx as nx 
 import os 
-os.chdir('D:/Research/Graph Learning/code/')
+os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
 import pandas as pd 
 import csv
 from sklearn.metrics.pairwise import cosine_similarity, rbf_kernel
@@ -77,14 +77,15 @@ def lin_map(x, lims_out, lims_in):
 	return y
 
 
-def filter_graph_to_knn(adj_matrix,node_num, k=5):
+def filter_graph_to_knn(adj_matrix, node_num, k):
+	a=adj_matrix.copy()
 	for i in range(node_num):
-		rbf_row=adj_matrix[i,:]
+		rbf_row=a[i,:].ravel()
 		neighbors=np.argsort(rbf_row)[:node_num-k]
-		adj_matrix[i, neighbors]=0
-		adj_matrix[neighbors,i]=0
-	np.fill_diagonal(adj_matrix,0)
-	return adj_matrix
+		a[i, neighbors]=0
+		a[neighbors,i]=0
+	np.fill_diagonal(a,0)
+	return a
 
 
 def filter_graph_to_rbf(adj_matrix, node_num, thres=0.5):
