@@ -3,7 +3,7 @@ import random
 from random import choice
 import networkx as nx 
 import os 
-os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
+os.chdir('D:/Research/Graph Learning/code/')
 import pandas as pd 
 from sklearn.metrics.pairwise import cosine_similarity, rbf_kernel
 from sklearn.preprocessing import StandardScaler, Normalizer, MinMaxScaler
@@ -168,7 +168,7 @@ def normalized_trace(matrix, target_trace):
 	return normed_matrix
 
 def learn_knn_graph(signals, node_num, k=5):
-	print('Learning KNN Graph')
+	#print('Learning KNN Graph')
 	adj=rbf_kernel(signals.T)
 	np.fill_diagonal(adj,0)
 	knn_adj=filter_graph_to_knn(adj, node_num, k=k)
@@ -176,7 +176,7 @@ def learn_knn_graph(signals, node_num, k=5):
 	return knn_adj, knn_lap
 
 def learn_knn_signal(adj, signals, signal_num, node_num):
-	print('Learning KNN Signals')
+	#print('Learning KNN Signals')
 	new_signals=np.zeros((signal_num, node_num))
 	for i in range(signal_num):
 		for j in range(node_num):
