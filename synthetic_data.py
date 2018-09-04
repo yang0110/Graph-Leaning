@@ -194,6 +194,33 @@ def signal_noise(signal_num, node_num, scale):
 	noise=RS.normal(scale=scale, size=(signal_num, node_num))
 	return noise
 
+
+def blob_data(node_num, signal_num, dimension, cluster_num, cluster_std, noise_scale):
+	x, y=make_blobs(n_samples=node_num, n_features=dimension, centers=cluster_num, cluster_std=cluster_std, shuffle=False, random_state=42)
+	item_f=np.random.uniform(size=(signal_num, dimension))
+	signal=np.dot(item_f, x.T)
+	noise=np.random.normal(size=(signal_num, node_num), scale=noise_scale)
+	noisy_signal=signal+noise
+	return noisy_signal, item_f, x
+
+
+def generate_all_random_users(iterations, user_num):
+	random_users=np.random.choice(np.arange(user_num), size=iterations, replace=True)
+	return random_users
+
+
+def generate_all_article_pool(iterations, pool_size, article_num):
+
+	all_article_pool=[]
+	for i in range(iterations):
+		pool=np.random.choice(np.arange(article_num), size=pool_size, replace=True)
+		all_article_pool.append(pool)
+	all_article_pool=np.array(all_article_pool)
+
+	return all_article_pool
+
+
+	
 # adj, f=RGG(10)
 # laplacian=csgraph.laplacian(adj, normed=False)
 # laplacian=laplacian/np.linalg.norm(laplacian)
