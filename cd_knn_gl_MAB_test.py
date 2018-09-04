@@ -9,21 +9,22 @@ import datetime
 from synthetic_data import *
 from gl_MAB import GL_MAB
 from knn_MAB import KNN_MAB
+from cd_MAB import CD_MAB
 from sklearn.metrics.pairwise import rbf_kernel
 
-user_num=20
+user_num=30
 item_num=1000
 dimension=2
 item_pool_size=25
 cluster_num=4
-cluster_std=1.0
-noise_scale=0.5
+cluster_std=0.5
+noise_scale=0.1
 gl_alpha=0.1
 gl_beta=0.1
 gl_theta=0.1
 gl_step_size=0.5
 alpha=0.05
-iteration=200
+iteration=1000
 
 noisy_signal, item_features, true_user_features=blob_data(user_num, item_num, dimension, cluster_num, cluster_std, noise_scale)
 
@@ -32,6 +33,8 @@ np.fill_diagonal(true_adj,0)
 user_pool=generate_all_random_users(iteration, user_num)
 item_pools=generate_all_article_pool(iteration, item_pool_size, item_num)
 #########################
+cd_mab=CD_MAB(user_num, item_num, dimension, item_pool_size, alpha, K=10, true_user_features=true_user_features, true_graph=None)
+cd_cum_regret, cd_adj, cd_user_f, cd_error, cd_cluster=cd_mab.run(user_pool, item_pools, item_features, noisy_signal, iteration)
 
 knn_mab=KNN_MAB(user_num, item_num, dimension, item_pool_size,alpha, K=10, true_user_features=true_user_features, true_graph=None)
 knn_cum_regret, knn_adj,knn_user_f, knn_error, knn_denoised_signal=knn_mab.run(user_pool, item_pools, item_features, noisy_signal, iteration)
@@ -42,12 +45,14 @@ gl_cum_regret, gl_adj, gl_user_f, gl_error, gl_denoised_signal=gl_mab.run(user_p
 
 plt.plot(gl_cum_regret, label='GL')
 plt.plot(knn_cum_regret, label='KNN')
+plt.plot(cd_cum_regret, label='CD')
 plt.ylabel('Cum Regret', fontsize=12)
 plt.legend(loc=1)
 plt.show()
 
-plt.plot(gl_errorm, label='GL')
+plt.plot(gl_error, label='GL')
 plt.plot(knn_error, label='KNN')
+plt.plot(cd_error, label='CD')
 plt.ylabel('Learning Error (User Feature)', fontsize=12)
 plt.legend(loc=1)
 plt.show()
@@ -73,6 +78,7 @@ plt.axis('off')
 plt.title('GL Graph', fontsize=12)
 plt.show()
 
+
 pos=true_user_features
 graph=create_networkx_graph(user_num, knn_adj)
 edge_color=knn_adj[np.triu_indices(user_num,1)]
@@ -81,4 +87,16 @@ nodes=nx.draw_networkx_nodes(graph, pos, node_color=knn_denoised_signal[0], node
 edges=nx.draw_networkx_edges(graph, pos, width=1.0, alpha=0.1, edge_color='grey')
 plt.axis('off')
 plt.title('KNN Graph', fontsize=12)
+plt.show()
+
+
+
+pos=true_user_features
+graph=create_networkx_graph(user_num,cd_adj)
+edge_color=cd_adj[np.triu_indices(user_num,1)]
+plt.figure(figsize=(5,5))
+nodes=nx.draw_networkx_nodes(graph, pos, node_color=cd_cluster, node_size=100, cmap=plt.cm.jet)
+edges=nx.draw_networkx_edges(graph, pos, width=1.0, alpha=0.1, edge_color='grey')
+plt.axis('off')
+plt.title('CD Graph', fontsize=12)
 plt.show()

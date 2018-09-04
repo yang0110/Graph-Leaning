@@ -17,6 +17,9 @@ from scipy.sparse import csgraph
 #import seaborn as sns
 from scipy.optimize import minimize
 from sklearn.preprocessing import MinMaxScaler
+from community import community_louvain
+
+
 def sum_squareform(n):
 	#sum operator that find degree from upper triangle
 	ncols=int((n-1)*n/2)
@@ -135,3 +138,17 @@ def plot_graph_and_signal(adj_matrix, signal, pos, node_num, error_sigma, title=
 	else:
 		plt.clf()
 
+def generate_graph_from_rbf(adj_matrix):
+	adj_matrix=np.matrix(adj_matrix)
+	G=nx.from_numpy_matrix(adj_matrix)
+	print('Graph info:', nx.info(G))
+	return G
+
+def find_community_best_partition(graph):
+	parts=community_louvain.best_partition(graph)
+	values=[parts.get(node) for node in graph.nodes()]
+	clusters=values
+	n_clusters=len(np.unique(values))
+	del parts
+	del values
+	return clusters, n_clusters

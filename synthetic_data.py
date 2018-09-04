@@ -12,6 +12,7 @@ from sklearn.datasets import make_blobs
 from utils import *
 from knn_models import *
 
+
 def RGG(node_num, dimension=2):
 	RS=np.random.RandomState(seed=100)
 	features=RS.uniform(low=0, high=1, size=(node_num, dimension))
