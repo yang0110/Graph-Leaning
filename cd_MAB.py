@@ -1,12 +1,12 @@
 import numpy as np 
 import pandas as pandas
 import os
-os.chdir('D:/Research/Graph Learning/code/')
+os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
 from utils import *
 from synthetic_data import *
 from primal_dual_gl import Primal_dual_gl 
 from sklearn.metrics.pairwise import rbf_kernel, euclidean_distances
-
+from sklearn.metrics import normalized_mutual_info_score
 class CD_MAB():
 	def __init__(self, user_num, item_num, dimension, item_pool_size, alpha, K=10, true_user_features=None, true_graph=None):
 		self.user_num=user_num
@@ -20,7 +20,6 @@ class CD_MAB():
 		self.true_graph=true_graph
 		self.served_user=[]
 		self.noisy_signal=None
-		self.denoised_signal=None
 		self.picked_items_per_user={}
 		self.payoffs_per_user={}
 		self.picked_items=[]
@@ -38,6 +37,9 @@ class CD_MAB():
 		self.lap=None
 		self.cum_regret=[0]
 		self.learning_error=[]
+		self.cluster_error=[]
+		self.true_label=None
+
 	def initial(self):
 		for j in range(self.user_num):
 			self.cov_matrix[j]=np.identity(self.dimension)
@@ -77,6 +79,8 @@ class CD_MAB():
 
 			graph=generate_graph_from_rbf(self.adj)
 			self.learned_cluster, self.learned_cluster_num=find_community_best_partition(graph)
+			error=normalized_mutual_info_score(self.learned_cluster, self.true_label)
+			self.cluster_error.extend([error])
 		print('CD cluster num ~~~~~~~~~~~~~~~~~~', self.learned_cluster_num)
 		return self.learned_cluster, self.learned_cluster_num
 
@@ -111,21 +115,24 @@ class CD_MAB():
 		regret=max_payoff-payoff
 		self.cum_regret.extend([self.cum_regret[-1]+regret])
 
-	def run(self, user_pool, item_pools, item_features, noisy_signal, iteration):
+	def run(self, user_pool, item_pools, item_features, noisy_signal, iteration, true_label):
 		self.iteration=iteration
 		self.noisy_signal=noisy_signal
 		self.item_features=item_features
+		self.true_label=true_label
 		self.initial()
 		for i in range(self.iteration):
 			print('CD MAB Time ~~~~~~~~~~~~ ', i)
 			user=user_pool[i]
 			item_pool=item_pools[i]
-			self.served_user=list(np.unique(user_pool[:i]))
 			if user not in self.served_user:
 				self.picked_items_per_user[user]=[]
 				self.payoffs_per_user[user]=[]
+				self.served_user.extend([user])
+
 			else:
 				pass
+
 			self.find_cluster(user, i)
 			picked_item, payoff=self.pick_item_and_payoff(user, item_pool, i)
 			self.update_user_features(user, picked_item)
@@ -138,4 +145,4 @@ class CD_MAB():
 			else:
 				pass 
 
-		return self.cum_regret, self.adj, self.learned_user_features, self.learning_error, self.learned_cluster
+		return self.cum_regret, self.adj, self.learned_user_features, self.learning_error, self.learned_cluster, self.cluster_error

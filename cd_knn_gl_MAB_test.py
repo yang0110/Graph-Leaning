@@ -3,38 +3,43 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import networkx as nx 
 import os
-os.chdir('D:/Research/Graph Learning/code/')
+os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
 from collections import Counter
 import datetime
 from synthetic_data import *
 from gl_MAB import GL_MAB
 from knn_MAB import KNN_MAB
 from cd_MAB import CD_MAB
+from linucb_MAB import LINUCB_MAB
 from sklearn.metrics.pairwise import rbf_kernel
 
-user_num=50
+user_num=20
 item_num=1000
 dimension=2
-item_pool_size=25
+item_pool_size=5
 cluster_num=4
 cluster_std=1
 noise_scale=0.1
-gl_alpha=0.1
-gl_beta=0.1
+gl_alpha=1
+gl_beta=0.2
 gl_theta=0.01
 gl_step_size=0.5
 alpha=0.05
-iteration=500
+iteration=50
 
-noisy_signal, item_features, true_user_features=blob_data(user_num, item_num, dimension, cluster_num, cluster_std, noise_scale)
+noisy_signal, item_features, true_user_features, true_label=blob_data(user_num, item_num, dimension, cluster_num, cluster_std, noise_scale)
 
 true_adj=rbf_kernel(true_user_features)
 np.fill_diagonal(true_adj,0)
 user_pool=generate_all_random_users(iteration, user_num)
 item_pools=generate_all_article_pool(iteration, item_pool_size, item_num)
 #########################
+
+linucb_mab=LINUCB_MAB(user_num, item_num, dimension, item_pool_size, alpha, true_user_features=true_user_features, true_graph=None)
+linucb_cum_regret,linucb_user_f, linucb_error=linucb_mab.run(user_pool, item_pools, item_features, noisy_signal, iteration)
+
 cd_mab=CD_MAB(user_num, item_num, dimension, item_pool_size, alpha, K=10, true_user_features=true_user_features, true_graph=None)
-cd_cum_regret, cd_adj, cd_user_f, cd_error, cd_cluster=cd_mab.run(user_pool, item_pools, item_features, noisy_signal, iteration)
+cd_cum_regret, cd_adj, cd_user_f, cd_error, cd_cluster, cd_cluster_score=cd_mab.run(user_pool, item_pools, item_features, noisy_signal, iteration, true_label)
 
 knn_mab=KNN_MAB(user_num, item_num, dimension, item_pool_size,alpha, K=10, true_user_features=true_user_features, true_graph=None)
 knn_cum_regret, knn_adj,knn_user_f, knn_error, knn_denoised_signal=knn_mab.run(user_pool, item_pools, item_features, noisy_signal, iteration)
@@ -53,7 +58,7 @@ plt.show()
 plt.plot(gl_error, label='GL')
 plt.plot(knn_error, label='KNN')
 plt.plot(cd_error, label='CD')
-plt.ylabel('Learning Error (User Feature)', fontsize=12)
+plt.ylabel('Learning Error', fontsize=12)
 plt.legend(loc=1)
 plt.show()
 

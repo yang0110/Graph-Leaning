@@ -1,7 +1,7 @@
 import numpy as np 
 import pandas as pandas
 import os
-os.chdir('D:/Research/Graph Learning/code/')
+os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
 from utils import *
 from synthetic_data import *
 from primal_dual_gl import Primal_dual_gl 
@@ -39,7 +39,6 @@ class GL_MAB():
 		self.served_user_num=None
 		self.served_user=[]
 		self.cum_regret=[0]
-
 
 
 
@@ -107,7 +106,7 @@ class GL_MAB():
 				self.picked_items_per_user[user]=[]
 				self.noisy_signal_per_user[user]=[]
 				self.denoised_signal_per_user[user]=[]
-			self.served_user.extend([user])
+				self.served_user.extend([user])
 
 			picked_item, payoff=self.pick_item_and_payoff(user, item_pool, i)
 			self.graph_and_signal_learning()
