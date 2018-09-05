@@ -12,19 +12,19 @@ from knn_MAB import KNN_MAB
 from cd_MAB import CD_MAB
 from sklearn.metrics.pairwise import rbf_kernel
 
-user_num=30
+user_num=50
 item_num=1000
 dimension=2
 item_pool_size=25
 cluster_num=4
-cluster_std=0.5
+cluster_std=1
 noise_scale=0.1
 gl_alpha=0.1
 gl_beta=0.1
-gl_theta=0.1
+gl_theta=0.01
 gl_step_size=0.5
 alpha=0.05
-iteration=1000
+iteration=500
 
 noisy_signal, item_features, true_user_features=blob_data(user_num, item_num, dimension, cluster_num, cluster_std, noise_scale)
 
@@ -99,4 +99,18 @@ nodes=nx.draw_networkx_nodes(graph, pos, node_color=cd_cluster, node_size=100, c
 edges=nx.draw_networkx_edges(graph, pos, width=1.0, alpha=0.1, edge_color='grey')
 plt.axis('off')
 plt.title('CD Graph', fontsize=12)
+plt.show()
+
+
+
+fig, axes=plt.subplots(2,2)
+axes[0,0].scatter(pos[:,0], pos[:,1], c=noisy_signal[0].tolist(), cmap=plt.cm.jet)
+axes[0,1].scatter(pos[:,0], pos[:,1], c=gl_denoised_signal[0].tolist(), cmap=plt.cm.jet)
+axes[1,0].scatter(pos[:,0], pos[:,1], c=knn_denoised_signal[0].tolist(), cmap=plt.cm.jet)
+axes[1,1].scatter(pos[:,0], pos[:,1], c=cd_cluster, cmap=plt.cm.jet)
+axes[0,0].set_title('Noisy Signal')
+axes[0,1].set_title('GL Signal')
+axes[1,0].set_title('KNN Signal')
+axes[1,1].set_title('CD Signal')
+plt.tight_layout()
 plt.show()

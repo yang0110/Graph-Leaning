@@ -141,7 +141,6 @@ def plot_graph_and_signal(adj_matrix, signal, pos, node_num, error_sigma, title=
 def generate_graph_from_rbf(adj_matrix):
 	adj_matrix=np.matrix(adj_matrix)
 	G=nx.from_numpy_matrix(adj_matrix)
-	print('Graph info:', nx.info(G))
 	return G
 
 def find_community_best_partition(graph):
