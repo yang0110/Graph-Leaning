@@ -99,7 +99,8 @@ class GL_MAB():
 
 
 	def update_user_feature(self, user, picked_item):
-		signal=self.denoised_signal[-1, user]
+		item_index=np.where(self.picked_items==picked_item)[-1]
+		signal=self.denoised_signal[item_index, user]
 		item_f=self.item_features[picked_item]
 		self.cov_matrix[user]+=np.outer(item_f, item_f)
 		self.bias[user]+=(item_f*signal).ravel()
