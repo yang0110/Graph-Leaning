@@ -18,6 +18,8 @@ from scipy.sparse import csgraph
 from scipy.optimize import minimize
 from sklearn.preprocessing import MinMaxScaler
 from community import community_louvain
+from pygsp import graphs, plotting, filters
+import pyunlocbox
 
 
 def sum_squareform(n):
@@ -151,3 +153,18 @@ def find_community_best_partition(graph):
 	del parts
 	del values
 	return clusters, n_clusters
+
+def total_variation_signal_learning(adj, noisy_signal, gamma=3.0):
+	G=graphs.Graph(adj)
+	gamma=gamma
+	d=pyunlocbox.functions.dummy()
+	r=pyunlocbox.functions.norm_l1()
+	f=pyunlocbox.functions.norm_l2(w=1, y=noisy_signal, lambda_=gamma)
+	G.compute_differential_operator()
+	L=G.D.toarray()
+	step=0.999/(1+np.linalg.norm(L))
+	solver=pyunlocbox.solvers.mlfbf(L=L, step=step)
+	x0=noisy_signal.copy()
+	prob=pyunlocbox.solvers.solve([d,r,f], solver=solver, x0=x0, rtol=0, maxit=1000)
+	sol=prob['sol']
+	return sol 

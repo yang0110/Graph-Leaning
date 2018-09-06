@@ -8,7 +8,7 @@ from primal_dual_gl import Primal_dual_gl
 from sklearn.metrics.pairwise import rbf_kernel, euclidean_distances
 
 class GL_MAB():
-	def __init__(self, user_num, item_num, dimension, item_pool_size, alpha, gl_alpha, gl_beta, gl_theta, gl_step_size=0.5, true_user_features=None, true_graph=None):
+	def __init__(self, user_num, item_num, dimension, item_pool_size, alpha, gl_alpha, gl_beta, gl_theta, gl_step_size=0.5,jump_step=10, mode=2, true_user_features=None, true_graph=None):
 		self.user_num=user_num
 		self.item_num=item_num
 		self.dimension=dimension
@@ -34,11 +34,16 @@ class GL_MAB():
 		self.noisy_signal=None
 		self.avaiable_noisy_signal=None
 		self.picked_items=[]
-		self.adj_matrix=None
+		self.adj=np.identity(self.user_num)
 		self.learning_error=[]
 		self.served_user_num=None
 		self.served_user=[]
 		self.cum_regret=[0]
+		self.graph_error=[]
+		self.mode=mode
+		self.jump_step=jump_step
+		self.noisy_signal_copy=None
+		self.mix_signal=None
 
 
 
@@ -58,25 +63,43 @@ class GL_MAB():
 		else:
 			pass
 		self.avaiable_noisy_signal=self.noisy_signal[self.picked_items]
+		#print('self.avaiable_noisy_signal.shape', self.avaiable_noisy_signal.shape)
+		self.mix_signal=self.noisy_signal_copy[self.picked_items]
+		#print('self.mix_signal.shape', self.mix_signal.shape)
 		return picked_item, payoff
 
 
-	def graph_and_signal_learning(self):
+	def graph_and_signal_learning(self, time):
+		if (time%self.jump_step==0):
+			if (self.mode==1) or (self.denoised_signal is None):
+				print('mode 1, Update Graph On Noisy Signal')
+				Z=euclidean_distances(self.avaiable_noisy_signal.T, squared=True)
+			elif (self.mode==2):
+				print('mode 2, Update Graph On Mixed Signal')
+				Z=euclidean_distances(self.mix_signal.T, squared=True)
+			elif (self.mode==3):
+				print('mode 3, Update Graph On Denoised Signal')
+				Z=euclidean_distances(self.denoised_signal.T, squared=True)
+				#print('self.denoised_signal.shape', self.denoised_signal.shape)
+			else:
+				pass			
 
-		Z=euclidean_distances(self.avaiable_noisy_signal.T, squared=True)
-		np.fill_diagonal(Z,0)
-		Z=norm_W(Z, self.user_num)
-		primal_gl=Primal_dual_gl(self.user_num, Z, alpha=self.gl_alpha, beta=self.gl_beta, step_size=self.gl_step_size)
-		primal_adj, error=primal_gl.run()
-		lap=csgraph.laplacian(primal_adj, normed=False)
+			np.fill_diagonal(Z,0)
+			Z=norm_W(Z, self.user_num)
+			primal_gl=Primal_dual_gl(self.user_num, Z, alpha=self.gl_alpha, beta=self.gl_beta, step_size=self.gl_step_size)
+			primal_adj, error=primal_gl.run()
+			self.adj=primal_adj.copy()
+		else:
+			pass
+
+		lap=csgraph.laplacian(self.adj, normed=False)
 		self.denoised_signal=np.dot(self.avaiable_noisy_signal, np.linalg.inv((np.identity(self.user_num)+self.gl_theta*lap)))
-		self.adj_matrix=primal_adj.copy()
-		return self.adj_matrix, self.denoised_signal
+		self.noisy_signal_copy[self.picked_items]=self.denoised_signal
+
 
 
 	def update_user_feature(self, user, picked_item):
-		item_index=np.where(self.picked_items==picked_item)[-1]
-		signal=self.denoised_signal[item_index, user]
+		signal=self.denoised_signal[-1, user]
 		item_f=self.item_features[picked_item]
 		self.cov_matrix[user]+=np.outer(item_f, item_f)
 		self.bias[user]+=(item_f*signal).ravel()
@@ -91,9 +114,11 @@ class GL_MAB():
 
 
 	def run(self, user_pool, item_pools, item_features, noisy_signal, iteration):
-		self.noisy_signal=noisy_signal
+		self.noisy_signal=noisy_signal.copy()
+		self.noisy_signal_copy=noisy_signal.copy()
 		self.iteration=iteration
 		self.item_features=item_features
+
 		for i in range(self.iteration):
 			print('GL MAB Iteration ~~~~~~~~~~~~', i)
 			user=user_pool[i]
@@ -109,7 +134,7 @@ class GL_MAB():
 				self.served_user.extend([user])
 
 			picked_item, payoff=self.pick_item_and_payoff(user, item_pool, i)
-			self.graph_and_signal_learning()
+			self.graph_and_signal_learning(i)
 			self.update_user_feature(user, picked_item)
 			self.find_regret(user, item_pool, payoff)
 
@@ -118,8 +143,12 @@ class GL_MAB():
 				self.learning_error.extend([error])
 			else:
 				pass 
-
-		return self.cum_regret,  self.adj_matrix, self.learned_user_features, self.learning_error, self.denoised_signal
+			if self.true_graph is not None:
+				error=np.linalg.norm(self.adj-self.true_graph)
+				self.graph_error.extend([error])
+			else:
+				pass 
+		return self.cum_regret,  self.adj, self.learned_user_features, self.learning_error, self.graph_error, self.denoised_signal
 
 
 

@@ -8,7 +8,7 @@ from primal_dual_gl import Primal_dual_gl
 from sklearn.metrics.pairwise import rbf_kernel, euclidean_distances
 from sklearn.metrics import normalized_mutual_info_score
 class CD_MAB():
-	def __init__(self, user_num, item_num, dimension, item_pool_size, alpha, K=10, true_user_features=None, true_graph=None):
+	def __init__(self, user_num, item_num, dimension, item_pool_size, alpha, K=10, jump_step=10,true_user_features=None, true_graph=None):
 		self.user_num=user_num
 		self.item_num=item_num
 		self.item_features=None
@@ -28,17 +28,19 @@ class CD_MAB():
 		self.bias={}
 		self.cluster_cov_matrix={}
 		self.cluster_bias={}
-		self.adj=None
 		self.learned_cluster=range(self.user_num)
 		self.learned_cluster_num=self.user_num
 		self.learned_user_features=np.zeros((self.user_num, self.dimension))
 		self.learned_cluster_features=np.zeros((self.user_num, self.dimension))
-		self.adj=None
+		self.adj=np.identity(self.user_num)
 		self.lap=None
 		self.cum_regret=[0]
 		self.learning_error=[]
+		self.graph_error=[]
 		self.cluster_error=[]
 		self.true_label=None
+		self.jump_step=jump_step
+		self.not_served_user=list(range(self.user_num))
 
 	def initial(self):
 		for j in range(self.user_num):
@@ -65,30 +67,35 @@ class CD_MAB():
 		return picked_item, payoff
 
 	def find_cluster(self, user, time):
-
-		if (time%1!=0):
+		if (time%self.jump_step!=0):
 			pass
 		else:			
-
+			print('Update Graph')
 			self.adj=rbf_kernel(self.learned_user_features)
 			rbf_row=self.adj[user].copy()
+			if len(self.not_served_user)==0:
+				pass 
+			else:
+				rbf_row[self.not_served_user]=0
 			small_index=np.argsort(rbf_row)[:self.user_num-self.K]
+			big_index=np.argsort(rbf_row)[self.user_num-self.K:]
 			rbf_row[small_index]=0.0
+			rbf_row[big_index]=1.0
 			self.adj[user,:]=rbf_row
 			self.adj[:,user]=rbf_row
-
 			graph=generate_graph_from_rbf(self.adj)
 			self.learned_cluster, self.learned_cluster_num=find_community_best_partition(graph)
 			error=normalized_mutual_info_score(self.learned_cluster, self.true_label)
 			self.cluster_error.extend([error])
-		print('CD cluster num ~~~~~~~~~~~~~~~~~~', self.learned_cluster_num)
+		#print('CD cluster num ~~~~~~~~~~~~~~~~~~', self.learned_cluster_num)
 		return self.learned_cluster, self.learned_cluster_num
 
 
 	def update_cluster_features(self, user, time):
-		if (time%1!=0):
+		if (time%self.jump_step!=0):
 			pass 
 		else:
+			#print('Update Cluster')
 			same_cluster=np.where(np.array(self.learned_cluster)==self.learned_cluster[user])[0].tolist()
 			sum_cov_matrix=np.identity(self.dimension)
 			sum_bias=np.zeros(self.dimension)
@@ -103,11 +110,10 @@ class CD_MAB():
 				self.learned_cluster_features[i]=new_cluster_feature
 
 
-	def update_user_features(self, user, picked_item):
-		signal=self.payoffs_per_user[user][-1]
+	def update_user_features(self, user, picked_item, payoff):
 		item_f=self.item_features[picked_item]
 		self.cov_matrix[user]+=np.outer(item_f, item_f)
-		self.bias[user]+=(item_f*signal).ravel()
+		self.bias[user]+=(item_f*payoff).ravel()
 		self.learned_user_features[user]=np.dot(np.linalg.inv(self.cov_matrix[user]), self.bias[user])
 
 	def find_regret(self, user, item_pool, payoff):
@@ -129,13 +135,14 @@ class CD_MAB():
 				self.picked_items_per_user[user]=[]
 				self.payoffs_per_user[user]=[]
 				self.served_user.extend([user])
+				self.not_served_user.remove(user)
 
 			else:
 				pass
 
 			self.find_cluster(user, i)
 			picked_item, payoff=self.pick_item_and_payoff(user, item_pool, i)
-			self.update_user_features(user, picked_item)
+			self.update_user_features(user, picked_item, payoff)
 			self.update_cluster_features(user, i)
 			self.find_regret(user, item_pool, payoff)
 
@@ -144,5 +151,9 @@ class CD_MAB():
 				self.learning_error.extend([error])
 			else:
 				pass 
-
-		return self.cum_regret, self.adj, self.learned_user_features, self.learning_error, self.learned_cluster, self.cluster_error
+			if self.true_graph is not None:
+				error=np.linalg.norm(self.adj-self.true_graph)
+				self.graph_error.extend([error])
+			else:
+				pass 
+		return self.cum_regret, self.adj, self.learned_user_features, self.learned_cluster_features, self.learning_error, self.graph_error, self.learned_cluster, self.cluster_error
