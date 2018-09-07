@@ -18,43 +18,60 @@ import pyunlocbox
 import seaborn as sns 
 sns.set_style('white')
 
-user_num=30
-item_num=5000
-dimension=25
+path='C:/Kaige_Research/Graph Learning/graph_learning_code/results/'
+timeRun = datetime.datetime.now().strftime('_%m_%d_%H_%M_%S') 
+
+
+user_num=50
+item_num=1000
+dimension=10
 item_pool_size=20
 cluster_num=5
-cluster_std=0.1
-noise_scale=0.1
+cluster_std=0.25
+noise_scale=0.25
 K=10
 gl_alpha=1
 gl_beta=0.2
-gl_theta=0.1
+gl_theta=0.01
 gl_step_size=0.5
-jump_step=10
+jump_step=50
 alpha=0.05
 iteration=5000
 
-noisy_signal, item_features, true_user_features, true_label=blob_data(user_num, item_num, dimension, cluster_num, cluster_std, noise_scale)
+newpath=path+'user_num_%s_noise_scale_%s_cluster_std_%s'%(user_num, noise_scale, cluster_std)+str(timeRun)+'/'
+if not os.path.exists(newpath):
+	    os.makedirs(newpath)
+
+noisy_signal, true_signal, item_features, true_user_features, true_label=blob_data(user_num, item_num, dimension, cluster_num, cluster_std, noise_scale)
+
+plt.plot(noisy_signal[0], label='noisy')
+plt.plot(true_signal[0], label='true')
+plt.legend(loc=2)
+plt.ylabel('signal', fontsize=12)
+plt.xlabel('node index', fontsize=12)
+plt.savefig(newpath+'true_vs_noisy_signal_%s'%(noise_scale)+'.png', dpi=100)
+plt.clf()
 
 true_adj=rbf_kernel(true_user_features)
-np.fill_diagonal(true_adj,0)
+np.fill_diagonal(true_adj, 0)
 true_adj=norm_W(true_adj, user_num)
 user_pool=generate_all_random_users(iteration, user_num)
 item_pools=generate_all_article_pool(iteration, item_pool_size, item_num)
 #########################
 
 linucb_mab=LINUCB_MAB(user_num, item_num, dimension, item_pool_size, alpha, true_user_features=true_user_features, true_graph=true_adj)
-linucb_cum_regret, linucb_user_f, linucb_error=linucb_mab.run(user_pool, item_pools, item_features, noisy_signal, iteration)
+linucb_cum_regret, linucb_user_f, linucb_error=linucb_mab.run(user_pool, item_pools, item_features, noisy_signal, true_signal, iteration)
 
-cd_mab=CD_MAB(user_num, item_num, dimension, item_pool_size, alpha, K=K, jump_step=jump_step, true_user_features=true_user_features, true_graph=true_adj)
-cd_cum_regret, cd_adj, cd_user_f, cd_cluster_f, cd_error, cd_graph_error, cd_cluster, cd_cluster_score=cd_mab.run(user_pool, item_pools, item_features, noisy_signal, iteration, true_label)
+cd_mab=CD_MAB(user_num, item_num, dimension, item_pool_size, alpha, K=5, jump_step=10, true_user_features=true_user_features, true_graph=true_adj)
+cd_cum_regret, cd_adj, cd_user_f, cd_cluster_f, cd_error, cd_graph_error, cd_cluster, cd_cluster_score=cd_mab.run(user_pool, item_pools, item_features, noisy_signal,true_signal, iteration, true_label)
 
-knn_mab=KNN_MAB(user_num, item_num, dimension, item_pool_size,alpha, K=K, true_user_features=true_user_features, true_graph=true_adj)
-knn_cum_regret, knn_adj,knn_user_f, knn_error, knn_graph_error,  knn_denoised_signal=knn_mab.run(user_pool, item_pools, item_features, noisy_signal, iteration)
+knn_mab=KNN_MAB(user_num, item_num, dimension, item_pool_size,alpha, K=5, jump_step=10, mode=1, true_user_features=true_user_features, true_graph=true_adj)
+knn_cum_regret, knn_adj,knn_user_f, knn_error, knn_graph_error,  knn_denoised_signal=knn_mab.run(user_pool, item_pools, item_features, noisy_signal, true_signal, iteration)
 
 gl_mab=GL_MAB(user_num, item_num, dimension, item_pool_size, alpha, gl_alpha, gl_beta, gl_theta, gl_step_size, jump_step=jump_step, mode=2, true_user_features=true_user_features, true_graph=true_adj)
+gl_cum_regret, gl_adj, gl_user_f, gl_error, gl_graph_error, gl_denoised_signal=gl_mab.run(user_pool, item_pools, item_features, noisy_signal,true_signal,  iteration)
 
-gl_cum_regret, gl_adj, gl_user_f, gl_error, gl_graph_error, gl_denoised_signal=gl_mab.run(user_pool, item_pools, item_features, noisy_signal, iteration)
+
 
 plt.plot(gl_cum_regret, label='GL')
 plt.plot(knn_cum_regret, label='KNN')
@@ -62,7 +79,8 @@ plt.plot(cd_cum_regret, label='CD')
 plt.plot(linucb_cum_regret, label='LINUCB')
 plt.ylabel('Cumulative Regret', fontsize=12)
 plt.xlabel('Time', fontsize=12)
-plt.legend(loc=1)
+plt.legend(loc=2)
+plt.savefig(newpath+'cum_regret_%s_%s_%s'%(user_num, int(100*noise_scale), int(100*cluster_std))+'.png', dpi=100)
 plt.show()
 
 plt.plot(gl_error, label='GL')
@@ -72,6 +90,7 @@ plt.plot(linucb_error, label='LINUCB')
 plt.ylabel('Learning Error', fontsize=12)
 plt.xlabel('Time', fontsize=12)
 plt.legend(loc=1)
+plt.savefig(newpath+'learning_error_%s_%s_%s'%(user_num,int(100*noise_scale), int(100*cluster_std))+'.png', dpi=100)
 plt.show()
 
 
@@ -81,11 +100,13 @@ plt.plot(cd_graph_error, label='CD')
 plt.ylabel('Graph Error', fontsize=12)
 plt.xlabel('Time', fontsize=12)
 plt.legend(loc=1)
+plt.savefig(newpath+'graph_error_%s_%s_%s'%(user_num,int(100*noise_scale), int(100*cluster_std))+'.png', dpi=100)
 plt.show()
 
 plt.plot(cd_cluster_score, label='CD')
 plt.title('Cluster Score', fontsize=12)
 plt.show()
+
 
 pos=true_user_features
 test_item=np.random.normal(size=dimension)
@@ -112,8 +133,8 @@ axes[1,1].set_title('CD Signal')
 axes[2,0].set_title('KNN Signal')
 axes[2,1].set_title('GL Signal')
 plt.tight_layout()
+plt.savefig(newpath+'signal_%s_%s_%s'%(user_num, int(100*noise_scale), int(100*cluster_std))+'.png', dpi=100)
 plt.show()
-
 
 
 gl_payoff2=total_variation_signal_learning(gl_adj, noisy_payoff)	

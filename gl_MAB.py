@@ -24,6 +24,8 @@ class GL_MAB():
 		self.denoised_signal_per_user={}
 		self.picked_items_per_user={}
 		self.learned_user_features=np.zeros((self.user_num, self.dimension))
+		self.learned_cluster_features=np.zeros((self.user_num, self.dimension))
+
 		self.cov_matrix={}
 		self.bias={}
 		self.true_user_features=true_user_features
@@ -44,12 +46,13 @@ class GL_MAB():
 		self.jump_step=jump_step
 		self.noisy_signal_copy=None
 		self.mix_signal=None
+		self.true_signal=None
 
 
 
 	def pick_item_and_payoff(self, user, item_pool, time):
 
-		mean=np.dot(self.item_features[item_pool], self.learned_user_features[user])
+		mean=np.dot(self.item_features[item_pool], self.learned_cluster_features[user])
 		temp1=np.dot(self.item_features[item_pool], np.linalg.inv(self.cov_matrix[user]))
 		temp2=np.sum(temp1*self.item_features[item_pool], axis=1)*np.log(time+1)
 		var=np.sqrt(temp2)
@@ -96,15 +99,19 @@ class GL_MAB():
 		self.denoised_signal=np.dot(self.avaiable_noisy_signal, np.linalg.inv((np.identity(self.user_num)+self.gl_theta*lap)))
 		self.noisy_signal_copy[self.picked_items]=self.denoised_signal
 
-
-
 	def update_user_feature(self, user, picked_item):
 		item_index=np.where(self.picked_items==picked_item)[-1]
 		signal=self.denoised_signal[item_index, user]
 		item_f=self.item_features[picked_item]
 		self.cov_matrix[user]+=np.outer(item_f, item_f)
-		self.bias[user]+=(item_f*signal).ravel()
+		self.bias[user]+=item_f*signal
 		self.learned_user_features[user]=np.dot(np.linalg.inv(self.cov_matrix[user]), self.bias[user])
+
+	def update_cluster_features(self, user):
+		adj_copy=self.adj.copy()
+		np.fill_diagonal(adj_copy,1)
+		weights=adj_copy[user]
+		self.learned_cluster_features[user]=np.average(self.learned_user_features,axis=0, weights=weights)
 
 
 	def find_regret(self, user, item_pool, payoff):
@@ -113,10 +120,10 @@ class GL_MAB():
 		self.cum_regret.extend([self.cum_regret[-1]+regret])
 
 
-
-	def run(self, user_pool, item_pools, item_features, noisy_signal, iteration):
+	def run(self, user_pool, item_pools, item_features, noisy_signal,true_signal, iteration):
 		self.noisy_signal=noisy_signal.copy()
 		self.noisy_signal_copy=noisy_signal.copy()
+		self.true_signal=true_signal
 		self.iteration=iteration
 		self.item_features=item_features
 
@@ -136,6 +143,7 @@ class GL_MAB():
 
 			picked_item, payoff=self.pick_item_and_payoff(user, item_pool, i)
 			self.graph_and_signal_learning(i)
+			self.update_cluster_features(user)
 			self.update_user_feature(user, picked_item)
 			self.find_regret(user, item_pool, payoff)
 

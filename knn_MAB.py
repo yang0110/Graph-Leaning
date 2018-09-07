@@ -9,7 +9,7 @@ from sklearn.metrics.pairwise import rbf_kernel, euclidean_distances
 
 
 class KNN_MAB():
-	def __init__(self, user_num, item_num, dimension, item_pool_size,alpha, K=10, mode=2, true_user_features=None, true_graph=None):
+	def __init__(self, user_num, item_num, dimension, item_pool_size, alpha, K=10,jump_step=10, mode=1, true_user_features=None, true_graph=None):
 		self.user_num=user_num
 		self.item_num=item_num
 		self.item_features=None
@@ -35,10 +35,13 @@ class KNN_MAB():
 		self.cum_regret=[0]
 		self.learning_error=[]
 		self.graph_error=[]
+		self.true_signal=None
+		self.jump_step=jump_step
+		self.learned_cluster_features=np.zeros((self.user_num, self.dimension))
 
 
 	def pick_item_and_payoff(self, user, item_pool, time):
-		mean=np.dot(self.item_features[item_pool], self.learned_user_features[user])
+		mean=np.dot(self.item_features[item_pool], self.learned_cluster_features[user])
 		temp1=np.dot(self.item_features[item_pool], np.linalg.inv(self.cov_matrix[user]))
 		temp2=np.sum(temp1*self.item_features[item_pool], axis=1)*np.log(time+1)
 		var=np.sqrt(temp2)
@@ -55,7 +58,7 @@ class KNN_MAB():
 		return picked_item, payoff
 
 	def knn_graph(self, time):
-		if (time%10==0):
+		if (time%self.jump_step==0):
 			print('Update Graph')
 			if (self.mode==1) or (self.denoised_signal is None):
 				self.adj, self.lap=learn_knn_graph(self.avaiable_noisy_signal, self.user_num, k=self.K)
@@ -68,11 +71,16 @@ class KNN_MAB():
 	def knn_signal(self):
 		self.denoised_signal=learn_knn_signal(self.adj, self.avaiable_noisy_signal, len(self.avaiable_noisy_signal), self.user_num)
 
-	def update_user_features(self, user, picked_item):
-		signal=self.denoised_signal[-1, user]
+	def update_cluster_features(self, user):
+		adj_copy=self.adj.copy()
+		np.fill_diagonal(adj_copy,1)
+		weights=adj_copy[user]
+		self.learned_cluster_features[user]=np.average(self.learned_user_features,axis=0, weights=weights)
+
+	def update_user_features(self, user, picked_item, payoff):
 		item_f=self.item_features[picked_item]
 		self.cov_matrix[user]+=np.outer(item_f, item_f)
-		self.bias[user]+=(item_f*signal).ravel()
+		self.bias[user]+=item_f*payoff
 		self.learned_user_features[user]=np.dot(np.linalg.inv(self.cov_matrix[user]), self.bias[user])
 
 	def find_regret(self, user, item_pool, payoff):
@@ -80,9 +88,10 @@ class KNN_MAB():
 		regret=max_payoff-payoff
 		self.cum_regret.extend([self.cum_regret[-1]+regret])
 
-	def run(self, user_pool, item_pools, item_features, noisy_signal, iteration):
+	def run(self, user_pool, item_pools, item_features, noisy_signal,true_signal, iteration):
 		self.iteration=iteration
 		self.noisy_signal=noisy_signal
+		self.true_signal=true_signal
 		self.item_features=item_features
 		for i in range(self.iteration):
 			print('KNN MAB Time ~~~~~~~~~~~~ ', i)
@@ -98,10 +107,11 @@ class KNN_MAB():
 			else:
 				pass
 
-			picked_item, payoff=self.pick_item_and_payoff(user, item_pool,i)
+			picked_item, payoff=self.pick_item_and_payoff(user, item_pool, i)
 			self.knn_graph(i)
-			self.knn_signal()
-			self.update_user_features(user, picked_item)
+			#self.knn_signal()
+			self.update_cluster_features(user)
+			self.update_user_features(user, picked_item, payoff)
 			self.find_regret(user, item_pool, payoff)
 
 			if self.true_user_features is not None:

@@ -41,6 +41,7 @@ class CD_MAB():
 		self.true_label=None
 		self.jump_step=jump_step
 		self.not_served_user=list(range(self.user_num))
+		self.true_signal=None
 
 	def initial(self):
 		for j in range(self.user_num):
@@ -51,7 +52,7 @@ class CD_MAB():
 
 	def pick_item_and_payoff(self, user, item_pool, time):
 		mean=np.dot(self.item_features[item_pool], self.learned_cluster_features[user])
-		temp1=np.dot(self.item_features[item_pool], np.linalg.inv(self.cluster_cov_matrix[user]))
+		temp1=np.dot(self.item_features[item_pool], np.linalg.inv(self.cov_matrix[user]))
 		temp2=np.sum(temp1*self.item_features[item_pool], axis=1)*np.log(time+1)
 		var=np.sqrt(temp2)
 		pta=mean+self.alpha*var
@@ -78,12 +79,12 @@ class CD_MAB():
 			else:
 				rbf_row[self.not_served_user]=0
 			small_index=np.argsort(rbf_row)[:self.user_num-self.K]
-			big_index=np.argsort(rbf_row)[self.user_num-self.K:]
+			#big_index=np.argsort(rbf_row)[self.user_num-self.K:]
 			rbf_row[small_index]=0.0
-			rbf_row[big_index]=1.0
+			#rbf_row[big_index]=1.0
 			self.adj[user,:]=rbf_row
 			self.adj[:,user]=rbf_row
-			graph=generate_graph_from_rbf(self.adj)
+			graph=generate_graph(self.adj)
 			self.learned_cluster, self.learned_cluster_num=find_community_best_partition(graph)
 			error=normalized_mutual_info_score(self.learned_cluster, self.true_label)
 			self.cluster_error.extend([error])
@@ -92,28 +93,27 @@ class CD_MAB():
 
 
 	def update_cluster_features(self, user, time):
-		if (time%self.jump_step!=0):
-			pass 
-		else:
-			#print('Update Cluster')
-			same_cluster=np.where(np.array(self.learned_cluster)==self.learned_cluster[user])[0].tolist()
-			sum_cov_matrix=np.identity(self.dimension)
-			sum_bias=np.zeros(self.dimension)
-			for key in same_cluster:
-				sum_cov_matrix+=self.cov_matrix[key]-np.identity(self.dimension)
-				sum_bias+=self.bias[key]
-			self.cluster_cov_matrix[user]=np.identity(self.dimension)+sum_cov_matrix
-			self.cluster_bias[user]=sum_bias
-			inv_cluster_cor=np.linalg.inv(self.cluster_cov_matrix[user])
-			new_cluster_feature=np.dot(inv_cluster_cor, self.cluster_bias[user])
-			for i in same_cluster:
-				self.learned_cluster_features[i]=new_cluster_feature
+
+		same_cluster=np.where(np.array(self.learned_cluster)==self.learned_cluster[user])[0].tolist()
+		#print('same_cluster', same_cluster)
+		sum_cov_matrix=np.identity(self.dimension)
+		#sum_bias=np.zeros(self.dimension)
+		for key in same_cluster:
+			sum_cov_matrix+=(self.cov_matrix[key]-np.identity(self.dimension))
+			#sum_bias+=self.bias[key]
+		self.cluster_cov_matrix[user]=np.identity(self.dimension)+sum_cov_matrix
+		#self.cluster_bias[user]=sum_bias
+		#inv_cluster_cor=np.linalg.inv(self.cluster_cov_matrix[user])
+		#new_cluster_feature=np.dot(inv_cluster_cor, self.cluster_bias[user])
+		new_cluster_feature=np.mean(self.learned_user_features[same_cluster], axis=0)
+		for i in same_cluster:
+			self.learned_cluster_features[i]=new_cluster_feature
 
 
 	def update_user_features(self, user, picked_item, payoff):
 		item_f=self.item_features[picked_item]
 		self.cov_matrix[user]+=np.outer(item_f, item_f)
-		self.bias[user]+=(item_f*payoff).ravel()
+		self.bias[user]+=item_f*payoff
 		self.learned_user_features[user]=np.dot(np.linalg.inv(self.cov_matrix[user]), self.bias[user])
 
 	def find_regret(self, user, item_pool, payoff):
@@ -121,9 +121,10 @@ class CD_MAB():
 		regret=max_payoff-payoff
 		self.cum_regret.extend([self.cum_regret[-1]+regret])
 
-	def run(self, user_pool, item_pools, item_features, noisy_signal, iteration, true_label):
+	def run(self, user_pool, item_pools, item_features, noisy_signal, true_signal, iteration, true_label):
 		self.iteration=iteration
 		self.noisy_signal=noisy_signal
+		self.true_signal=true_signal
 		self.item_features=item_features
 		self.true_label=true_label
 		self.initial()

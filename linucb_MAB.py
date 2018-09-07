@@ -26,6 +26,7 @@ class LINUCB_MAB():
 		self.learned_user_features=np.zeros((self.user_num, self.dimension))
 		self.cum_regret=[0]
 		self.learning_error=[]
+		self.true_signal=None
 
 	def pick_item_and_payoff(self, user, item_pool, time):
 		mean=np.dot(self.item_features[item_pool], self.learned_user_features[user])
@@ -47,7 +48,7 @@ class LINUCB_MAB():
 	def update_user_features(self, user, picked_item, payoff):
 		item_f=self.item_features[picked_item]
 		self.cov_matrix[user]+=np.outer(item_f, item_f)
-		self.bias[user]+=(item_f*payoff).ravel()
+		self.bias[user]+=item_f*payoff
 		self.learned_user_features[user]=np.dot(np.linalg.inv(self.cov_matrix[user]), self.bias[user])
 
 	def find_regret(self, user, item_pool, payoff):
@@ -56,9 +57,10 @@ class LINUCB_MAB():
 		self.cum_regret.extend([self.cum_regret[-1]+regret])
 
 
-	def run(self,user_pool, item_pools, item_features, noisy_signal, iteration):
+	def run(self,user_pool, item_pools, item_features, noisy_signal, true_signal, iteration):
 		self.iteration=iteration
 		self.noisy_signal=noisy_signal
+		self.true_signal=true_signal
 		self.item_features=item_features
 		for i in range(self.iteration):
 			print('LINUCB MAB Time ~~~~~~~~~~~~ ', i)

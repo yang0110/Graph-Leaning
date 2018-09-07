@@ -145,13 +145,23 @@ def generate_graph_from_rbf(adj_matrix):
 	G=nx.from_numpy_matrix(adj_matrix)
 	return G
 
+def generate_graph(adj_matrix):
+	G=nx.Graph()
+	G.add_nodes_from(list(range(adj_matrix.shape[0])))
+	for i in range(adj_matrix.shape[0]):
+		for j in range(adj_matrix.shape[1]):
+			if adj_matrix[i,j]==0.0:
+				pass 
+			else:
+				G.add_edge(i,j, weight=adj_matrix[i,j])
+	return G
+
+
 def find_community_best_partition(graph):
 	parts=community_louvain.best_partition(graph)
 	values=[parts.get(node) for node in graph.nodes()]
 	clusters=values
 	n_clusters=len(np.unique(values))
-	del parts
-	del values
 	return clusters, n_clusters
 
 def total_variation_signal_learning(adj, noisy_signal, gamma=3.0):
