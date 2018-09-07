@@ -22,12 +22,12 @@ path='C:/Kaige_Research/Graph Learning/graph_learning_code/results/'
 timeRun = datetime.datetime.now().strftime('_%m_%d_%H_%M_%S') 
 
 
-user_num=50
+user_num=100
 item_num=1000
-dimension=10
+dimension=5
 item_pool_size=20
 cluster_num=5
-cluster_std=0.25
+cluster_std=0.1
 noise_scale=0.25
 K=10
 gl_alpha=1
@@ -36,7 +36,7 @@ gl_theta=0.01
 gl_step_size=0.5
 jump_step=50
 alpha=0.05
-iteration=5000
+iteration=10000
 
 newpath=path+'user_num_%s_noise_scale_%s_cluster_std_%s'%(user_num, noise_scale, cluster_std)+str(timeRun)+'/'
 if not os.path.exists(newpath):
@@ -50,7 +50,7 @@ plt.legend(loc=2)
 plt.ylabel('signal', fontsize=12)
 plt.xlabel('node index', fontsize=12)
 plt.savefig(newpath+'true_vs_noisy_signal_%s'%(noise_scale)+'.png', dpi=100)
-plt.clf()
+plt.show()
 
 true_adj=rbf_kernel(true_user_features)
 np.fill_diagonal(true_adj, 0)
@@ -62,7 +62,7 @@ item_pools=generate_all_article_pool(iteration, item_pool_size, item_num)
 linucb_mab=LINUCB_MAB(user_num, item_num, dimension, item_pool_size, alpha, true_user_features=true_user_features, true_graph=true_adj)
 linucb_cum_regret, linucb_user_f, linucb_error=linucb_mab.run(user_pool, item_pools, item_features, noisy_signal, true_signal, iteration)
 
-cd_mab=CD_MAB(user_num, item_num, dimension, item_pool_size, alpha, K=5, jump_step=10, true_user_features=true_user_features, true_graph=true_adj)
+cd_mab=CD_MAB(user_num, item_num, dimension, item_pool_size, alpha, K=10, jump_step=10, true_user_features=true_user_features, true_graph=true_adj)
 cd_cum_regret, cd_adj, cd_user_f, cd_cluster_f, cd_error, cd_graph_error, cd_cluster, cd_cluster_score=cd_mab.run(user_pool, item_pools, item_features, noisy_signal,true_signal, iteration, true_label)
 
 knn_mab=KNN_MAB(user_num, item_num, dimension, item_pool_size,alpha, K=5, jump_step=10, mode=1, true_user_features=true_user_features, true_graph=true_adj)
@@ -73,8 +73,8 @@ gl_cum_regret, gl_adj, gl_user_f, gl_error, gl_graph_error, gl_denoised_signal=g
 
 
 
-plt.plot(gl_cum_regret, label='GL')
-plt.plot(knn_cum_regret, label='KNN')
+#plt.plot(gl_cum_regret, label='GL')
+#plt.plot(knn_cum_regret, label='KNN')
 plt.plot(cd_cum_regret, label='CD')
 plt.plot(linucb_cum_regret, label='LINUCB')
 plt.ylabel('Cumulative Regret', fontsize=12)
@@ -83,8 +83,8 @@ plt.legend(loc=2)
 plt.savefig(newpath+'cum_regret_%s_%s_%s'%(user_num, int(100*noise_scale), int(100*cluster_std))+'.png', dpi=100)
 plt.show()
 
-plt.plot(gl_error, label='GL')
-plt.plot(knn_error, label='KNN')
+#plt.plot(gl_error, label='GL')
+#plt.plot(knn_error, label='KNN')
 plt.plot(cd_error, label='CD')
 plt.plot(linucb_error, label='LINUCB')
 plt.ylabel('Learning Error', fontsize=12)
@@ -94,8 +94,8 @@ plt.savefig(newpath+'learning_error_%s_%s_%s'%(user_num,int(100*noise_scale), in
 plt.show()
 
 
-plt.plot(gl_graph_error, label='GL')
-plt.plot(knn_graph_error, label='KNN')
+#plt.plot(gl_graph_error, label='GL')
+#plt.plot(knn_graph_error, label='KNN')
 plt.plot(cd_graph_error, label='CD')
 plt.ylabel('Graph Error', fontsize=12)
 plt.xlabel('Time', fontsize=12)

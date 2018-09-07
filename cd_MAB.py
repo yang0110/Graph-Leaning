@@ -96,16 +96,17 @@ class CD_MAB():
 
 		same_cluster=np.where(np.array(self.learned_cluster)==self.learned_cluster[user])[0].tolist()
 		#print('same_cluster', same_cluster)
-		sum_cov_matrix=np.identity(self.dimension)
-		#sum_bias=np.zeros(self.dimension)
-		for key in same_cluster:
-			sum_cov_matrix+=(self.cov_matrix[key]-np.identity(self.dimension))
-			#sum_bias+=self.bias[key]
-		self.cluster_cov_matrix[user]=np.identity(self.dimension)+sum_cov_matrix
-		#self.cluster_bias[user]=sum_bias
-		#inv_cluster_cor=np.linalg.inv(self.cluster_cov_matrix[user])
+		# sum_cov_matrix=np.identity(self.dimension)
+		# sum_bias=np.zeros(self.dimension)
+		# for key in same_cluster:
+		# 	sum_cov_matrix+=(self.cov_matrix[key]-np.identity(self.dimension))
+		# 	sum_bias+=self.bias[key]
+		# self.cluster_cov_matrix[user]=np.identity(self.dimension)+sum_cov_matrix
+		# self.cluster_bias[user]=sum_bias
+		# inv_cluster_cor=np.linalg.inv(self.cluster_cov_matrix[user])
 		#new_cluster_feature=np.dot(inv_cluster_cor, self.cluster_bias[user])
-		new_cluster_feature=np.mean(self.learned_user_features[same_cluster], axis=0)
+		weights=self.adj[user][same_cluster]
+		new_cluster_feature=np.average(self.learned_user_features[same_cluster], axis=0, weights=weights)
 		for i in same_cluster:
 			self.learned_cluster_features[i]=new_cluster_feature
 

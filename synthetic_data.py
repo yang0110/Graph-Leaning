@@ -199,9 +199,9 @@ def signal_noise(signal_num, node_num, scale):
 
 def blob_data(node_num, signal_num, dimension, cluster_num, cluster_std, noise_scale):
 	x, y=make_blobs(n_samples=node_num, n_features=dimension, centers=cluster_num, cluster_std=cluster_std, center_box=(0,1.0), shuffle=False)
-	x=MinMaxScaler().fit_transform(x)
-	item_f, item_y=make_blobs(n_samples=signal_num, n_features=dimension, centers=cluster_num, cluster_std=cluster_std, center_box=(0,1.0), shuffle=False)
-	item_f=MinMaxScaler().fit_transform(item_f)
+	#x=MinMaxScaler().fit_transform(x)
+	item_f, item_y=make_blobs(n_samples=signal_num, n_features=dimension, centers=cluster_num, cluster_std=cluster_std, center_box=(0, 1.0), shuffle=False)
+	#item_f=MinMaxScaler().fit_transform(item_f)
 	signal=np.dot(item_f, x.T)
 	noise=np.random.normal(size=(signal_num, node_num), scale=noise_scale)
 	noisy_signal=signal+noise
@@ -214,7 +214,6 @@ def generate_all_random_users(iterations, user_num):
 
 
 def generate_all_article_pool(iterations, pool_size, article_num):
-
 	all_article_pool=[]
 	for i in range(iterations):
 		pool=np.random.choice(np.arange(article_num), size=pool_size, replace=True)

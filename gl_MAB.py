@@ -52,7 +52,7 @@ class GL_MAB():
 
 	def pick_item_and_payoff(self, user, item_pool, time):
 
-		mean=np.dot(self.item_features[item_pool], self.learned_cluster_features[user])
+		mean=np.dot(self.item_features[item_pool], self.learned_user_features[user])
 		temp1=np.dot(self.item_features[item_pool], np.linalg.inv(self.cov_matrix[user]))
 		temp2=np.sum(temp1*self.item_features[item_pool], axis=1)*np.log(time+1)
 		var=np.sqrt(temp2)
@@ -143,7 +143,7 @@ class GL_MAB():
 
 			picked_item, payoff=self.pick_item_and_payoff(user, item_pool, i)
 			self.graph_and_signal_learning(i)
-			self.update_cluster_features(user)
+			#self.update_cluster_features(user)
 			self.update_user_feature(user, picked_item)
 			self.find_regret(user, item_pool, payoff)
 
