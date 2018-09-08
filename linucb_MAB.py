@@ -1,7 +1,7 @@
 import numpy as np 
 import pandas as pandas
 import os
-os.chdir('D:/Research/Graph Learning/code/')
+os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
 from utils import *
 from synthetic_data import *
 

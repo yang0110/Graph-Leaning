@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib.pylab import *
 import matplotlib.pyplot as plt
 import os 
-os.chdir('D:/Research/Graph Learning/code/')
+os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
 from sklearn.metrics.pairwise import rbf_kernel
 from synthetic_data import *
 from primal_dual_gl import Primal_dual_gl 

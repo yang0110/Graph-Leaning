@@ -8,7 +8,7 @@ from primal_dual_gl import Primal_dual_gl
 from sklearn.metrics.pairwise import rbf_kernel, euclidean_distances
 
 
-class KNN_MAB():
+class Correct_KNN_MAB(): 
 	def __init__(self, user_num, item_num, dimension, item_pool_size, alpha, K=10, jump_step=10, true_user_features=None, true_graph=None):
 		self.user_num=user_num
 		self.item_num=item_num
@@ -64,18 +64,7 @@ class KNN_MAB():
 		return picked_item, payoff
 
 	def knn_graph(self, time):
-		if (time%self.jump_step==0):
-			print('Update Graph')
-			self.adj, self.lap=learn_knn_graph(self.avaiable_noisy_signal, self.user_num, k=self.K)
-		else:
-			pass
-
-	def knn_graph_from_node_features(self, time):
-		if (time%self.jump_step==0):
-			print('Update Graph')
-			self.adj, self.lap=learn_knn_graph_from_node_features(self.learned_user_features, self.user_num, k=self.K)
-		else:
-			pass
+		self.adj=self.true_graph.copy()
 
 	def knn_signal(self):
 		self.denoised_signal=learn_knn_signal(self.adj, self.avaiable_noisy_signal, len(self.avaiable_noisy_signal), self.user_num)

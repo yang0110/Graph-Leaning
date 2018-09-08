@@ -3,7 +3,7 @@ import random
 from random import choice
 import networkx as nx 
 import os 
-os.chdir('D:/Research/Graph Learning/code/')
+os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
 import pandas as pd 
 from sklearn.metrics.pairwise import cosine_similarity, rbf_kernel
 from sklearn.preprocessing import StandardScaler, Normalizer, MinMaxScaler
@@ -169,6 +169,13 @@ def normalized_trace(matrix, target_trace):
 	normed_matrix=target_trace*matrix/np.trace(matrix)
 	return normed_matrix
 
+def learn_knn_graph_from_node_features(node_features, node_num, k=5):
+	adj=rbf_kernel(node_features)
+	np.fill_diagonal(adj,0)
+	knn_adj=filter_graph_to_knn(adj, node_num, k=k)
+	knn_lap=csgraph.laplacian(knn_adj, normed=False)
+	return knn_adj, knn_lap
+
 def learn_knn_graph(signals, node_num, k=5):
 	#print('Learning KNN Graph')
 	adj=rbf_kernel(signals.T)
@@ -213,7 +220,7 @@ def generate_item_features(item_num, dimension):
 	item_features=np.empty([item_num, dimension])
 	for i in range(dimension):
 		item_features[:,i]=np.random.normal(0, np.sqrt(1.0*(dimension-1)/dimension), item_num)
-	item_features=Normalizer().fit_transform(item_features)
+	item_features=MinMaxScaler().fit_transform(item_features)
 	return item_features
 
 def generate_all_random_users(iterations, user_num):

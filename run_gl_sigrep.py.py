@@ -23,7 +23,7 @@ from pygsp import graphs, plotting, filters
 import pyunlocbox
 import networkx as nx 
 from gl_sigrep import Gl_sigrep
-path='C:/Kaige_Research/Graph Learning/graph_learning_code/results/test_results2/'
+path='C:/Kaige_Research/Graph Learning/graph_learning_code/results/'
 timeRun = datetime.datetime.now().strftime('_%m_%d_%H_%M_%S') 
 
 node_num=20

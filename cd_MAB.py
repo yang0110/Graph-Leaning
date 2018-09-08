@@ -1,7 +1,7 @@
 import numpy as np 
 import pandas as pandas
 import os
-os.chdir('D:/Research/Graph Learning/code/')
+os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
 from utils import *
 from synthetic_data import *
 from primal_dual_gl import Primal_dual_gl 
@@ -42,6 +42,7 @@ class CD_MAB():
 		self.jump_step=jump_step
 		self.not_served_user=list(range(self.user_num))
 		self.true_signal=None
+		self.avaiable_noisy_signal=None
 
 	def initial(self):
 		for j in range(self.user_num):
@@ -72,7 +73,10 @@ class CD_MAB():
 			pass
 		else:			
 			print('Update Graph')
-			self.adj=rbf_kernel(self.learned_user_features)
+			if self.avaiable_noisy_signal is None:
+				self.adj=rbf_kernel(self.learned_cluster_features)
+			else:
+				self.adj=rbf_kernel(self.avaiable_noisy_signal.T)
 			rbf_row=self.adj[user].copy()
 			if len(self.not_served_user)==0:
 				pass 
@@ -95,7 +99,6 @@ class CD_MAB():
 	def update_cluster_features(self, user, time):
 		print('Update Cluster Features')
 		same_cluster=np.where(np.array(self.learned_cluster)==self.learned_cluster[user])[0].tolist()
-		#print('same_cluster', same_cluster)
 		sum_cov_matrix=np.identity(self.dimension)
 		sum_bias=np.zeros(self.dimension)
 		for key in same_cluster:

@@ -1,14 +1,14 @@
 import numpy as np 
 import pandas as pandas
 import os
-os.chdir('D:/Research/Graph Learning/code/')
+os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
 from utils import *
 from synthetic_data import *
 from primal_dual_gl import Primal_dual_gl 
 from sklearn.metrics.pairwise import rbf_kernel, euclidean_distances
 
 class GL_MAB():
-	def __init__(self, user_num, item_num, dimension, item_pool_size, alpha, gl_alpha, gl_beta, gl_theta, gl_step_size=0.5,jump_step=10, mode=2, true_user_features=None, true_graph=None):
+	def __init__(self, user_num, item_num, dimension, item_pool_size, alpha, gl_alpha, gl_beta, gl_theta, gl_step_size=0.5, jump_step=10,mode=2, true_user_features=None, true_graph=None):
 		self.user_num=user_num
 		self.item_num=item_num
 		self.dimension=dimension
@@ -48,6 +48,7 @@ class GL_MAB():
 		self.noisy_signal_copy=None
 		self.mix_signal=None
 		self.true_signal=None
+
 	def initial(self):
 		for u in range(self.user_num):
 			self.cov_matrix[u]=np.identity(self.dimension)
@@ -72,9 +73,7 @@ class GL_MAB():
 		else:
 			pass
 		self.avaiable_noisy_signal=self.noisy_signal[self.picked_items]
-		#print('self.avaiable_noisy_signal.shape', self.avaiable_noisy_signal.shape)
 		self.mix_signal=self.noisy_signal_copy[self.picked_items]
-		#print('self.mix_signal.shape', self.mix_signal.shape)
 		return picked_item, payoff
 
 
@@ -89,7 +88,6 @@ class GL_MAB():
 			elif (self.mode==3):
 				print('mode 3, Update Graph On Denoised Signal')
 				Z=euclidean_distances(self.denoised_signal.T, squared=True)
-				#print('self.denoised_signal.shape', self.denoised_signal.shape)
 			else:
 				pass			
 
@@ -106,7 +104,7 @@ class GL_MAB():
 		self.denoised_signal=np.dot(self.avaiable_noisy_signal, np.linalg.inv((np.identity(self.user_num)+self.gl_theta*lap)))
 		self.noisy_signal_copy[self.picked_items]=self.denoised_signal
 
-	def update_user_feature(self, user, picked_item):
+	def update_user_feature(self, user, picked_item, payoff):
 		item_index=np.where(self.picked_items==picked_item)[-1]
 		signal=self.denoised_signal[item_index, user]
 		item_f=self.item_features[picked_item]
@@ -117,15 +115,11 @@ class GL_MAB():
 	def update_cluster_features(self, user):
 		adj_copy=self.adj.copy()
 		np.fill_diagonal(adj_copy,1)
-		weights=adj_copy[user]
-		sum_weights=np.sum(weights)
-		weights=weights/sum_weights
-		weights=np.ones(self.user_num)
 		sum_cov_matrix=np.identity(self.dimension)
 		sum_bais=np.zeros(self.dimension)
 		for i_user in range(self.user_num):
-			sum_cov_matrix+=(weights[i_user]*self.cov_matrix[i_user]-np.identity(self.dimension))
-			sum_bais+=(weights[i_user]*self.bias[i_user])
+			sum_cov_matrix+=(self.cov_matrix[i_user]-np.identity(self.dimension))
+			sum_bais+=self.bias[i_user]
 		self.cluster_cov_matrix[user]=sum_cov_matrix
 		self.cluster_bias[user]=sum_bais
 		weights=adj_copy[user]
@@ -162,7 +156,7 @@ class GL_MAB():
 			picked_item, payoff=self.pick_item_and_payoff(user, item_pool, i)
 			self.graph_and_signal_learning(i)
 			self.update_cluster_features(user)
-			self.update_user_feature(user, picked_item)
+			self.update_user_feature(user, picked_item, payoff)
 			self.find_regret(user, item_pool, payoff)
 
 			if self.true_user_features is not None:
