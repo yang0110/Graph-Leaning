@@ -1,7 +1,7 @@
 import numpy as np 
 import pandas as pandas
 import os
-os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
+os.chdir('D:/Research/Graph Learning/code/')
 from utils import *
 from synthetic_data import *
 from primal_dual_gl import Primal_dual_gl 
@@ -90,8 +90,8 @@ class CD_MAB():
 			self.adj[:,user]=rbf_row
 			graph=generate_graph_from_rbf(self.adj)
 			self.learned_cluster, self.learned_cluster_num=find_community_best_partition(graph)
-			error=normalized_mutual_info_score(self.learned_cluster, self.true_label)
-			self.cluster_error.extend([error])
+			#error=normalized_mutual_info_score(self.learned_cluster, self.true_label)
+			#self.cluster_error.extend([error])
 		print('CD cluster num ~~~~~~~~~~~~~~~~~~~~~~', self.learned_cluster_num)
 		return self.learned_cluster, self.learned_cluster_num
 
@@ -126,12 +126,12 @@ class CD_MAB():
 		regret=max_payoff-payoff
 		self.cum_regret.extend([self.cum_regret[-1]+regret])
 
-	def run(self, user_pool, item_pools, item_features, noisy_signal, true_signal, iteration, true_label):
+	def run(self, user_pool, item_pools, item_features, noisy_signal, true_signal, iteration):
 		self.iteration=iteration
 		self.noisy_signal=noisy_signal
 		self.true_signal=true_signal
 		self.item_features=item_features
-		self.true_label=true_label
+		#self.true_label=true_label
 		self.initial()
 		for i in range(self.iteration):
 			print('CD MAB Time ~~~~~~~~~~~~ ', i)
@@ -162,4 +162,4 @@ class CD_MAB():
 				self.graph_error.extend([error])
 			else:
 				pass 
-		return self.cum_regret, self.adj, self.learned_user_features, self.learned_cluster_features, self.learning_error, self.graph_error, self.learned_cluster, self.cluster_error
+		return self.cum_regret, self.adj, self.learned_user_features, self.learned_cluster_features, self.learning_error, self.graph_error, self.learned_cluster

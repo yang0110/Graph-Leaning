@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import TruncatedSVD
 import networkx as nx 
 import os 
-os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
+os.chdir('D:/Research/Graph Learning/code/')
 from community import community_louvain
 import pandas as pd 
 import csv
