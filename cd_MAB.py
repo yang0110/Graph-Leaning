@@ -1,7 +1,7 @@
 import numpy as np 
 import pandas as pandas
 import os
-os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
+os.chdir('D:/Research/Graph Learning/code/')
 from utils import *
 from synthetic_data import *
 from primal_dual_gl import Primal_dual_gl 
@@ -13,7 +13,7 @@ class CD_MAB():
 		self.item_num=item_num
 		self.item_features=None
 		self.dimension=dimension
-		self.alpha=alpha
+		self.alpha=1+np.sqrt(np.log(2.0/alpha)/2.0)
 		self.item_pool_size=item_pool_size
 		self.K=K
 		self.true_user_features=true_user_features
@@ -52,7 +52,7 @@ class CD_MAB():
 
 	def pick_item_and_payoff(self, user, item_pool, time):
 		mean=np.dot(self.item_features[item_pool], self.learned_cluster_features[user])
-		temp1=np.dot(self.item_features[item_pool], np.linalg.inv(self.cov_matrix[user]))
+		temp1=np.dot(self.item_features[item_pool], np.linalg.inv(self.cluster_cov_matrix[user]))
 		temp2=np.sum(temp1*self.item_features[item_pool], axis=1)*np.log(time+1)
 		var=np.sqrt(temp2)
 		pta=mean+self.alpha*var
@@ -84,29 +84,30 @@ class CD_MAB():
 			#rbf_row[big_index]=1.0
 			self.adj[user,:]=rbf_row
 			self.adj[:,user]=rbf_row
-			graph=generate_graph(self.adj)
+			graph=generate_graph_from_rbf(self.adj)
 			self.learned_cluster, self.learned_cluster_num=find_community_best_partition(graph)
 			error=normalized_mutual_info_score(self.learned_cluster, self.true_label)
 			self.cluster_error.extend([error])
-		#print('CD cluster num ~~~~~~~~~~~~~~~~~~', self.learned_cluster_num)
+		print('CD cluster num ~~~~~~~~~~~~~~~~~~~~~~', self.learned_cluster_num)
 		return self.learned_cluster, self.learned_cluster_num
 
 
 	def update_cluster_features(self, user, time):
-
+		print('Update Cluster Features')
 		same_cluster=np.where(np.array(self.learned_cluster)==self.learned_cluster[user])[0].tolist()
 		#print('same_cluster', same_cluster)
-		# sum_cov_matrix=np.identity(self.dimension)
-		# sum_bias=np.zeros(self.dimension)
-		# for key in same_cluster:
-		# 	sum_cov_matrix+=(self.cov_matrix[key]-np.identity(self.dimension))
-		# 	sum_bias+=self.bias[key]
-		# self.cluster_cov_matrix[user]=np.identity(self.dimension)+sum_cov_matrix
-		# self.cluster_bias[user]=sum_bias
-		# inv_cluster_cor=np.linalg.inv(self.cluster_cov_matrix[user])
-		#new_cluster_feature=np.dot(inv_cluster_cor, self.cluster_bias[user])
-		weights=self.adj[user][same_cluster]
-		new_cluster_feature=np.average(self.learned_user_features[same_cluster], axis=0, weights=weights)
+		sum_cov_matrix=np.identity(self.dimension)
+		sum_bias=np.zeros(self.dimension)
+		for key in same_cluster:
+			sum_cov_matrix+=(self.cov_matrix[key]-np.identity(self.dimension))
+			sum_bias+=self.bias[key]
+
+		self.cluster_cov_matrix[user]=sum_cov_matrix
+		self.cluster_bias[user]=sum_bias
+		inv_cluster_cor=np.linalg.inv(self.cluster_cov_matrix[user])
+		new_cluster_feature=np.dot(inv_cluster_cor, self.cluster_bias[user])
+		#weights=self.adj[user][same_cluster]
+		#new_cluster_feature=np.average(self.learned_user_features[same_cluster], axis=0, weights=weights)
 		for i in same_cluster:
 			self.learned_cluster_features[i]=new_cluster_feature
 

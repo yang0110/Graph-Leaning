@@ -3,7 +3,7 @@ import random
 from random import choice
 import networkx as nx 
 import os 
-os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
+os.chdir('D:/Research/Graph Learning/code/')
 import pandas as pd 
 from sklearn.metrics.pairwise import cosine_similarity, rbf_kernel
 from sklearn.preprocessing import StandardScaler, Normalizer, MinMaxScaler
@@ -199,14 +199,22 @@ def signal_noise(signal_num, node_num, scale):
 
 def blob_data(node_num, signal_num, dimension, cluster_num, cluster_std, noise_scale):
 	x, y=make_blobs(n_samples=node_num, n_features=dimension, centers=cluster_num, cluster_std=cluster_std, center_box=(0,1.0), shuffle=False)
-	#x=MinMaxScaler().fit_transform(x)
-	item_f, item_y=make_blobs(n_samples=signal_num, n_features=dimension, centers=cluster_num, cluster_std=cluster_std, center_box=(0, 1.0), shuffle=False)
+	x=MinMaxScaler().fit_transform(x)
+	#item_f, item_y=make_blobs(n_samples=signal_num, n_features=dimension, centers=cluster_num, cluster_std=cluster_std, center_box=(0, 1.0), shuffle=False)
+	item_f=np.random.uniform(size=(signal_num, dimension))
 	#item_f=MinMaxScaler().fit_transform(item_f)
+	#item_f=generate_item_features(signal_num, dimension)
 	signal=np.dot(item_f, x.T)
 	noise=np.random.normal(size=(signal_num, node_num), scale=noise_scale)
 	noisy_signal=signal+noise
 	return noisy_signal, signal, item_f, x, y
 
+def generate_item_features(item_num, dimension):
+	item_features=np.empty([item_num, dimension])
+	for i in range(dimension):
+		item_features[:,i]=np.random.normal(0, np.sqrt(1.0*(dimension-1)/dimension), item_num)
+	item_features=Normalizer().fit_transform(item_features)
+	return item_features
 
 def generate_all_random_users(iterations, user_num):
 	random_users=np.random.choice(np.arange(user_num), size=iterations, replace=True)

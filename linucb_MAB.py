@@ -1,7 +1,7 @@
 import numpy as np 
 import pandas as pandas
 import os
-os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
+os.chdir('D:/Research/Graph Learning/code/')
 from utils import *
 from synthetic_data import *
 
@@ -11,7 +11,7 @@ class LINUCB_MAB():
 		self.item_num=item_num
 		self.item_features=None
 		self.dimension=dimension
-		self.alpha=alpha
+		self.alpha=1+np.sqrt(np.log(2.0/alpha)/2.0)
 		self.item_pool_size=item_pool_size
 		self.true_user_features=true_user_features
 		self.true_graph=true_graph
