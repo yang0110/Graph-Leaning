@@ -3,7 +3,7 @@ import random
 from random import choice
 import networkx as nx 
 import os 
-os.chdir('D:/Research/Graph Learning/code/')
+os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
 import pandas as pd 
 from sklearn.metrics.pairwise import cosine_similarity, rbf_kernel
 from sklearn.preprocessing import StandardScaler, Normalizer, MinMaxScaler

@@ -7,7 +7,7 @@ from synthetic_data import *
 from primal_dual_gl import Primal_dual_gl 
 from sklearn.metrics.pairwise import rbf_kernel, euclidean_distances
 
-class GL_MAB():
+class GL_MAB2():
 	def __init__(self, user_num, item_num, dimension, item_pool_size, alpha, gl_alpha, gl_beta, gl_theta, gl_step_size=0.5, jump_step=10,mode=2, true_user_features=None, true_graph=None):
 		self.user_num=user_num
 		self.item_num=item_num
@@ -59,8 +59,8 @@ class GL_MAB():
 
 	def pick_item_and_payoff(self, user, item_pool, time):
 
-		mean=np.dot(self.item_features[item_pool], self.learned_cluster_features[user])
-		temp1=np.dot(self.item_features[item_pool], np.linalg.inv(self.cluster_cov_matrix[user]))
+		mean=np.dot(self.item_features[item_pool], self.learned_user_features[user])
+		temp1=np.dot(self.item_features[item_pool], np.linalg.inv(self.cov_matrix[user]))
 		temp2=np.sum(temp1*self.item_features[item_pool], axis=1)*np.log(time+1)
 		var=np.sqrt(temp2)
 		pta=mean+self.alpha*var
@@ -155,7 +155,7 @@ class GL_MAB():
 
 			picked_item, payoff=self.pick_item_and_payoff(user, item_pool, i)
 			self.graph_and_signal_learning(i)
-			self.update_cluster_features(user)
+			#self.update_cluster_features(user)
 			self.update_user_feature(user, picked_item, payoff)
 			self.find_regret(user, item_pool, payoff)
 
