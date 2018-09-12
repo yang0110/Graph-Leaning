@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib.pylab import *
 import matplotlib.pyplot as plt
 import os 
-os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
+os.chdir('D:/Research/Graph Learning/code/')
 from sklearn.metrics.pairwise import rbf_kernel, euclidean_distances
 #import seaborn as sns
 from synthetic_data import *
@@ -25,7 +25,7 @@ def Primal_dual_gl_loop(node_num, signal, iteration, alpha=1, beta=0.2, theta=0.
 		print('graph error', error[-1])
 		lap=csgraph.laplacian(primal_adj, normed=False)
 		signal=np.dot(signal, np.linalg.inv((np.identity(node_num)+theta*lap)))
-	return primal_adj, signal
+	return primal_adj, lap, signal
 
 
 def Siprep_gl_loop(node_num, signal, iteration, alpha=10, beta=0.2, theta=0.01, step_size=0.5):
@@ -39,4 +39,4 @@ def Siprep_gl_loop(node_num, signal, iteration, alpha=10, beta=0.2, theta=0.01, 
 		print('graph error', error[-1])
 		lap=csgraph.laplacian(learned_adj, normed=False)
 		signal=np.dot(signal, np.linalg.inv((np.identity(node_num)+theta*lap)))
-	return learned_adj, signal
+	return learned_adj, lap, signal

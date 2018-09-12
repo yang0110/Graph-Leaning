@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import networkx as nx 
 import os
-os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
+os.chdir('D:/Research/Graph Learning/code/')
 from collections import Counter
 import datetime
 from synthetic_data import *
@@ -21,25 +21,25 @@ import seaborn as sns
 from sklearn.utils.extmath import randomized_svd
 sns.set_style('white')
 
-path='C:/Kaige_Research/Graph Learning/graph_learning_code/results/MAB_models_results/'
+path='D:/Research/Graph Learning/code/results/MAB_models_results/'
 timeRun = datetime.datetime.now().strftime('_%m_%d_%H_%M_%S') 
 
 
-user_num=50
+user_num=20
 item_num=1000
-dimension=10
+dimension=2
 item_pool_size=25
 cluster_num=5
-cluster_std=0.25
-noise_scale=0.0
+cluster_std=0.1
+noise_scale=0.1
 K=10
 gl_alpha=1
-gl_beta=0.1
+gl_beta=0.2
 gl_theta=0.01
 gl_step_size=0.5
-jump_step=50
+jump_step=10
 alpha=0.05
-iteration=10000
+iteration=1000
 
 
 newpath=path+'user_num_%s_dimension_%s_noise_scale_%s_cluster_std_%s'%(user_num, dimension, noise_scale, cluster_std)+str(timeRun)+'/'
@@ -84,12 +84,12 @@ gl2_cum_regret, gl2_adj, gl2_user_f, gl2_error, gl2_graph_error, gl2_denoised_si
 
 
 plt.figure(figsize=(5,5))
-plt.plot(gl_cum_regret, label='GL', color='k', marker='o', markersize=8, markevery=0.1)
-plt.plot(gl2_cum_regret, label='GL2', color='r', marker='o', markersize=8, markevery=0.1)
-plt.plot(knn_cum_regret, label='KNN', color='y', marker='*',markersize=8,  markevery=0.1)
+plt.plot(gl2_cum_regret, label='GL', color='r', marker='o', markersize=5, markevery=0.1)
+plt.plot(gl_cum_regret, label='GL+KNN', color='k', marker='o', markersize=5, markevery=0.1)
+plt.plot(knn_cum_regret, label='RBF+KNN', color='y', marker='*',markersize=5,  markevery=0.1)
 #plt.plot(c_knn_cum_regret, label='KNN Correct', color='k', marker='*', markersize=8, markevery=0.1)
-plt.plot(cd_cum_regret, label='CD', color='b', marker='p',markersize=8,  markevery=0.1)
-plt.plot(linucb_cum_regret, label='LINUCB', color='g', marker='s',markersize=8,  markevery=0.1)
+plt.plot(cd_cum_regret, label='CD', color='b', marker='p',markersize=5,  markevery=0.1)
+plt.plot(linucb_cum_regret, label='LINUCB', color='g', marker='s',markersize=5,  markevery=0.1)
 plt.ylabel('Cumulative Regret', fontsize=12)
 plt.xlabel('Time', fontsize=12)
 plt.legend(loc=2)
@@ -100,13 +100,13 @@ plt.clf()
 
 
 plt.figure(figsize=(5,5))
-plt.plot(gl_error, label='GL', color='k', marker='o', markersize=8, markevery=0.1)
-plt.plot(gl2_error, label='GL2', color='r', marker='o', markersize=8, markevery=0.1)
-plt.plot(knn_error, label='KNN', color='y', marker='*',markersize=8,  markevery=0.1)
-#plt.plot(c_knn_error, label='KNN Correct', color='k', marker='*', markersize=8, markevery=0.1)
-plt.plot(cd_error, label='CD', color='b', marker='p',markersize=8,  markevery=0.1)
-plt.plot(linucb_error, label='LINUCB', color='g', marker='s',markersize=8,  markevery=0.1)
-plt.ylabel('Cumulative Regret', fontsize=12)
+plt.plot(gl2_error, label='GL', color='r', marker='o', markersize=5, markevery=0.1)
+plt.plot(gl_error, label='GL+KNN', color='k', marker='o', markersize=5, markevery=0.1)
+plt.plot(knn_error, label='RBF+KNN', color='y', marker='*',markersize=5,  markevery=0.1)
+#plt.plot(c_knn_error, label='KNN Correct', color='k', marker='*', markersize=5, markevery=0.1)
+plt.plot(cd_error, label='CD', color='b', marker='p',markersize=5,  markevery=0.1)
+plt.plot(linucb_error, label='LINUCB', color='g', marker='s',markersize=5,  markevery=0.1)
+plt.ylabel('Learning Error', fontsize=12)
 plt.xlabel('Time', fontsize=12)
 plt.legend(loc=1)
 plt.tight_layout()
@@ -115,12 +115,14 @@ plt.savefig(newpath+'learning_error_%s_%s_%s'%(user_num, int(100*noise_scale), i
 plt.clf()
 
 
+
+
 plt.figure(figsize=(5,5))
-plt.plot(gl_graph_error, label='GL', color='r', marker='o', markersize=8, markevery=0.3)
-plt.plot(gl2_graph_error, label='GL2', color='r', marker='o', markersize=8, markevery=0.3)
-plt.plot(knn_graph_error, label='KNN', color='y', marker='*',markersize=8,  markevery=0.3)
-#plt.plot(c_knn_graph_error, label='KNN Correct', color='k', marker='*', markersize=8, markevery=0.1)
-plt.plot(cd_graph_error, label='CD', color='b', marker='p',markersize=8,  markevery=0.3)
+plt.plot(gl2_graph_error, label='GL', color='r', marker='o', markersize=5, markevery=0.3)
+plt.plot(gl_graph_error, label='GL+KNN', color='k', marker='o', markersize=5, markevery=0.3)
+plt.plot(knn_graph_error, label='RBF+KNN', color='y', marker='*',markersize=5,  markevery=0.3)
+#plt.plot(c_knn_graph_error, label='KNN Correct', color='k', marker='*', markersize=5, markevery=0.1)
+plt.plot(cd_graph_error, label='CD', color='b', marker='p',markersize=5,  markevery=0.3)
 plt.ylabel('Graph Error', fontsize=12)
 plt.xlabel('Time', fontsize=12)
 plt.ticklabel_format(style='sci', axis='both', scilimits=(0,0))
@@ -129,6 +131,26 @@ plt.tight_layout()
 plt.savefig(newpath+'graph_error_%s_%s_%s'%(user_num,int(100*noise_scale), int(100*cluster_std))+'.png', dpi=100)
 plt.clf()
 
+
+plt.figure(figsize=(5,5))
+plt.plot(linucb_cum_regret, label='LINUCB',color='g', marker='s',markersize=5,  markevery=0.1)
+plt.plot(gl2_cum_regret, label='GL',color='r', marker='o', markersize=5, markevery=0.1)
+plt.legend(loc=1)
+plt.ylabel('Cumulative Regret', fontsize=12)
+plt.xlabel('Time', fontsize=12)
+plt.tight_layout()
+plt.savefig(newpath+'linucb_VS_GL_cum_regret_%s_%s_%s'%(user_num,int(100*noise_scale), int(100*cluster_std))+'.png', dpi=100)
+plt.clf()
+
+plt.figure(figsize=(5,5))
+plt.plot(linucb_error, label='LINUCB',color='g', marker='s',markersize=5,  markevery=0.1)
+plt.plot(gl2_error, label='GL',color='r', marker='o', markersize=5, markevery=0.1)
+plt.legend(loc=1)
+plt.ylabel('Learning Error', fontsize=12)
+plt.xlabel('Time', fontsize=12)
+plt.tight_layout()
+plt.savefig(newpath+'linucb_VS_GL_learning_error_%s_%s_%s'%(user_num,int(100*noise_scale), int(100*cluster_std))+'.png', dpi=100)
+plt.clf()
 
 pos=true_user_features[:,:2]
 test_item=np.random.normal(size=dimension)
@@ -181,10 +203,10 @@ fig, axes=plt.subplots(2,2)
 axes[0,0].pcolor(true_adj, cmap=plt.cm.jet)
 axes[0,1].pcolor(cd_adj, cmap=plt.cm.jet)
 axes[1,0].pcolor(knn_adj, cmap=plt.cm.jet)
-axes[1,1].pcolor(gl2_adj, cmap=plt.cm.jet)
+axes[1,1].pcolor(gl_adj, cmap=plt.cm.jet)
 axes[0,0].set_title('True Adj')
 axes[0,1].set_title('CD Adj')
-axes[1,0].set_title('KNN Adj')
+axes[1,0].set_title('RBF Adj')
 axes[1,1].set_title('GL Adj')
 plt.tight_layout()
 plt.savefig(newpath+'Adj_%s_%s_%s'%(user_num, int(100*noise_scale), int(100*cluster_std))+'.png', dpi=100)

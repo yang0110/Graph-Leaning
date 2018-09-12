@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import networkx as nx 
 import os
-os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
+os.chdir('D:/Research/Graph Learning/code/')
 from collections import Counter
 import datetime
 from synthetic_data import *
@@ -21,17 +21,17 @@ import seaborn as sns
 from sklearn.utils.extmath import randomized_svd
 sns.set_style('white')
 
-path='C:/Kaige_Research/Graph Learning/graph_learning_code/results/MAB_models_results/'
+path='D:/Research/Graph Learning/code/results/MAB_models_results/'
 timeRun = datetime.datetime.now().strftime('_%m_%d_%H_%M_%S') 
 
 
-user_num=20
+user_num=50
 item_num=1000
 dimension=10
 item_pool_size=25
 cluster_num=5
 cluster_std=0.1
-noise_scale=0.1
+noise_scale=0.3
 K=10
 gl_alpha=1
 gl_beta=0.1
@@ -39,81 +39,129 @@ gl_theta=0.01
 gl_step_size=0.5
 jump_step=50
 alpha=0.05
-iteration=5000
-
+iteration=1000
 
 newpath=path+'user_num_%s_dimension_%s_noise_scale_%s_cluster_std_%s'%(user_num, dimension, noise_scale, cluster_std)+str(timeRun)+'/'
 if not os.path.exists(newpath):
 	    os.makedirs(newpath)
 
 noisy_signal, true_signal, item_features, true_user_features, true_label=blob_data(user_num, item_num, dimension, cluster_num, cluster_std, noise_scale)
+test_item=np.random.normal(size=dimension)
+true_test_signal=np.dot(true_user_features, test_item)
+noisy_test_signal=true_test_signal+np.random.normal(size=user_num, scale=noise_scale)
 
-plt.figure(figsize=(5,5))
-plt.plot(noisy_signal[0], label='noisy')
-plt.plot(true_signal[0], label='true')
-plt.legend(loc=2)
-plt.ylabel('signal', fontsize=12)
-plt.xlabel('node index', fontsize=12)
-plt.savefig(newpath+'true_vs_noisy_signal_%s'%(noise_scale)+'.png', dpi=100)
-plt.clf()
+# plt.figure(figsize=(5,5))
+# plt.plot(noisy_signal[0], label='noisy')
+# plt.plot(true_signal[0], label='true')
+# plt.legend(loc=2)
+# plt.ylabel('signal', fontsize=12)
+# plt.xlabel('node index', fontsize=12)
+# plt.savefig(newpath+'true_vs_noisy_signal_%s'%(noise_scale)+'.png', dpi=100)
+# plt.clf()
 
 true_adj=rbf_kernel(true_user_features)
 np.fill_diagonal(true_adj, 0)
+true_lap=csgraph.laplacian(true_adj, normed=False)
+
 true_adj=norm_W(true_adj, user_num)
 user_pool=generate_all_random_users(iteration, user_num)
 item_pools=generate_all_article_pool(iteration, item_pool_size, item_num)
 #########################
-
-gl_theta_list=[0.01, 0.05, 0.1, 0.2, 0.3]
+gl_beta_list=[0.2]
+gl_theta_list=np.arange(0, 0.2, 0.01)
 regret_dict={}
 signal_error_dict={}
 graph_error_dict={}
+key_list=[]
+smooth_dict={}
+learned_signal={}
 for gl_theta in gl_theta_list:
-	gl2_mab=GL_MAB2(user_num, item_num, dimension, item_pool_size, alpha, gl_alpha, gl_beta, gl_theta, gl_step_size, jump_step=jump_step, mode=1, true_user_features=true_user_features, true_graph=true_adj)
-	gl2_cum_regret, gl2_adj, gl2_user_f, gl2_error, gl2_graph_error, gl2_denoised_signal=gl2_mab.run(user_pool, item_pools, item_features, noisy_signal,true_signal,  iteration)
-	regret_dict[gl_theta]=gl2_cum_regret
-	signal_error_dict[gl_theta]=gl2_error
-	graph_error_dict[gl_theta]=gl2_graph_error
+	for gl_beta in gl_beta_list:
+		gl2_mab=GL_MAB2(user_num, item_num, dimension, item_pool_size, alpha, gl_alpha, gl_beta, gl_theta, gl_step_size, jump_step=jump_step, mode=1, true_user_features=true_user_features, true_graph=true_adj)
+		gl2_cum_regret, gl2_adj, gl2_user_f, gl2_error, gl2_graph_error, gl2_denoised_signal=gl2_mab.run(user_pool, item_pools, item_features, noisy_signal,true_signal,  iteration)
+		key=str(gl_beta)+' '+str(gl_theta)
+		key_list.extend([key])
+		print('key', key)
+		regret_dict[key]=gl2_cum_regret
+		signal_error_dict[key]=gl2_error
+		graph_error_dict[key]=gl2_graph_error
+		signal=np.dot(gl2_user_f, test_item)
+		learned_signal[key]=signal
+		smooth_dict[key]=np.dot(signal, np.dot(true_lap, signal.T))
 
+linucb_mab=LINUCB_MAB(user_num, item_num, dimension, item_pool_size, alpha, true_user_features=true_user_features, true_graph=true_adj)
+linucb_cum_regret, linucb_user_f, linucb_error=linucb_mab.run(user_pool, item_pools, item_features, noisy_signal, true_signal, iteration)
+
+linucb_signal=np.dot(linucb_user_f, test_item)
+smoothness=[]
+linucb_smooth=np.dot(linucb_signal, np.dot(true_lap, linucb_signal.T))
+smoothness.extend([linucb_smooth])
+
+for i in key_list:
+	smoothness.extend([smooth_dict[i]])
+
+x_ticks=['lincub']+key_list
+plt.figure(figsize=(5,5))
+plt.plot(smoothness,'.')
+#loc, old_ticks=plt.xticks()
+#plt.xticks(loc, x_ticks, rotation=45)
+plt.ylabel('smoothness', fontsize=12)
+plt.savefig(newpath+'smoothness_%s_%s_%s'%(user_num, int(100*noise_scale), int(100*cluster_std))+'.png', dpi=100)
+plt.show()
+
+
+plt.figure(figsize=(5,5))
+plt.plot(true_test_signal, label='True Signal')
+plt.plot(noisy_test_signal, label='Noisy Signal')
+plt.plot(linucb_signal, label='LINUCB Signal')
+for i in key_list:
+	plt.plot(learned_signal[i], label='GL'+' '+i)
+plt.legend(loc=1)
+plt.ylabel('Signal', fontsize=12)
+plt.xlabel('Node')
+plt.savefig(newpath+'signals_%s_%s_%s'%(user_num, int(100*noise_scale), int(100*cluster_std))+'.png', dpi=100)
+plt.show()
 
 
 
 
 
 plt.figure(figsize=(5,5))
-for theta in gl_theta_list:
-	plt.plot(regret_dict[theta], label=theta)
+for key in key_list:
+	plt.plot(regret_dict[key], label=key)
+plt.plot(linucb_cum_regret, label='LINUCB')
 plt.ylabel('Cumulative Regret', fontsize=12)
 plt.xlabel('Time', fontsize=12)
 plt.legend(loc=2)
 plt.ticklabel_format(style='sci', axis='both', scilimits=(0,0))
 plt.savefig(newpath+'cum_regret_%s_%s_%s'%(user_num, int(100*noise_scale), int(100*cluster_std))+'.png', dpi=100)
 plt.tight_layout()
-plt.clf()
+plt.show()
 
 
 plt.figure(figsize=(5,5))
-for theta in gl_theta_list:
-	plt.plot(signal_error_dict[tehta], label=theta)
+for key in key_list:
+	plt.plot(signal_error_dict[key], label=key)
+plt.plot(linucb_error, label='LINUCB')
 plt.ylabel('Learning Error', fontsize=12)
 plt.xlabel('Time', fontsize=12)
 plt.legend(loc=1)
 plt.tight_layout()
 plt.ticklabel_format(style='sci', axis='both', scilimits=(0,0))
 plt.savefig(newpath+'learning_error_%s_%s_%s'%(user_num, int(100*noise_scale), int(100*cluster_std))+'.png', dpi=100)
-plt.clf()
+plt.show()
 
 
 plt.figure(figsize=(5,5))
-for theta in gl_theta_list:
-	plt.plot(graph_error_dict[theta], label=theta)
+for key in key_list:
+	plt.plot(graph_error_dict[key], label=key)
 plt.ylabel('Graph Error', fontsize=12)
 plt.xlabel('Time', fontsize=12)
 plt.ticklabel_format(style='sci', axis='both', scilimits=(0,0))
 plt.legend(loc=1)
 plt.tight_layout()
 plt.savefig(newpath+'graph_error_%s_%s_%s'%(user_num,int(100*noise_scale), int(100*cluster_std))+'.png', dpi=100)
-plt.clf()
+plt.show()
 
 
 # pos=true_user_features[:,:2]
