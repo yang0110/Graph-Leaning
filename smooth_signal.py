@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib.pylab import *
 import matplotlib.pyplot as plt
 import os 
-os.chdir('D:/Research/Graph Learning/code/')
+os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
 from sklearn.metrics.pairwise import rbf_kernel, euclidean_distances
 import seaborn as sns
 sns.set_style("white")
@@ -17,7 +17,7 @@ from sklearn.utils.extmath import randomized_svd
 from gl_sigrep import Gl_sigrep
 from gl_algorithms import *
 
-newpath='D:/Research/Graph Learning/code/results/MAB_models_results/gl_and_primal_results/'
+newpath='C:/Kaige_Research/Graph Learning/graph_learning_code/results/MAB_models_results/'
 if not os.path.exists(newpath):
 	    os.makedirs(newpath)
 

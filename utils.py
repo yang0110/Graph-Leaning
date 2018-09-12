@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import TruncatedSVD
 import networkx as nx 
 import os 
-os.chdir('D:/Research/Graph Learning/code/')
+os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
 import pandas as pd 
 import csv
 from sklearn.metrics.pairwise import cosine_similarity, rbf_kernel
@@ -178,3 +178,7 @@ def total_variation_signal_learning(adj, noisy_signal, gamma=3.0):
 	prob=pyunlocbox.solvers.solve([d,r,f], solver=solver, x0=x0, rtol=0, maxit=1000)
 	sol=prob['sol']
 	return sol 
+
+def find_smoothness(signal, lap):
+	smoothness=np.dot(signal, np.dot(lap, signal.T))
+	return smoothness

@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import networkx as nx 
 import os
-os.chdir('D:/Research/Graph Learning/code/')
+os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
 from collections import Counter
 import datetime
 from synthetic_data import *
@@ -12,7 +12,7 @@ from knn_MAB import KNN_MAB
 from cd_MAB import CD_MAB
 from linucb_MAB import LINUCB_MAB
 from sklearn.metrics.pairwise import rbf_kernel
-path='D:/Research/Graph Learning/code/results/MAB_models_results/'
+path='C:/Kaige_Research/Graph Learning/graph_learning_code/results/MAB_models_results/'
 timeRun = datetime.datetime.now().strftime('_%m_%d_%H_%M_%S') 
 
 user_num=20
