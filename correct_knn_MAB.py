@@ -72,13 +72,7 @@ class Correct_KNN_MAB():
 	def knn_signal(self):
 		d=np.sum(self.adj, axis=1)
 		degree_matrix=np.diag(d)
-		self.denoised_signal=self.avaiable_noisy_signal.copy()
-		s_list=[]
-		for i in range(3):
-			self.denoised_signal=np.dot(np.dot(np.linalg.inv(degree_matrix), self.adj), self.denoised_signal.T).T
-			s=find_smoothness(self.denoised_signal[0], self.lap)
-			s_list.extend([s])
-		return s_list
+		self.denoised_signal=np.dot(np.dot(np.linalg.inv(degree_matrix), self.adj), self.avaiable_noisy_signal.T).T
 
 	def update_cluster_features(self, user):
 		adj_copy=self.adj.copy()
@@ -133,7 +127,7 @@ class Correct_KNN_MAB():
 
 			picked_item, payoff=self.pick_item_and_payoff(user, item_pool, i)
 			self.knn_graph(i)
-			s_list=self.knn_signal()
+			self.knn_signal()
 			#self.update_cluster_features(user)
 			self.update_user_features(user, picked_item, payoff)
 			self.find_regret(user, item_pool, payoff)
@@ -148,4 +142,4 @@ class Correct_KNN_MAB():
 				self.graph_error.extend([error])
 			else:
 				pass 
-		return self.cum_regret,  self.adj, self.learned_user_features, self.learning_error,self.graph_error, self.denoised_signal, s_list
+		return self.cum_regret,  self.adj, self.learned_user_features, self.learning_error,self.graph_error, self.denoised_signal

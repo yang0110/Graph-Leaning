@@ -25,13 +25,13 @@ path='C:/Kaige_Research/Graph Learning/graph_learning_code/results/MAB_models_re
 timeRun = datetime.datetime.now().strftime('_%m_%d_%H_%M_%S') 
 
 
-user_num=20
+user_num=100
 item_num=1000
 dimension=2
 item_pool_size=25
 cluster_num=5
 cluster_std=0.1
-noise_scale=0.25
+noise_scale=0.1
 K=10
 gl_alpha=1
 gl_beta=0.2
@@ -39,7 +39,7 @@ gl_theta=0.01
 gl_step_size=0.5
 jump_step=10
 alpha=0.05
-iteration=1000
+iteration=5000
 
 
 newpath=path+'user_num_%s_dimension_%s_noise_scale_%s_cluster_std_%s'%(user_num, dimension, noise_scale, cluster_std)+str(timeRun)+'/'
@@ -74,7 +74,7 @@ knn_mab=KNN_MAB(user_num, item_num, dimension, item_pool_size,alpha, K=user_num,
 knn_cum_regret, knn_adj, knn_user_f, knn_error, knn_graph_error,  knn_denoised_signal=knn_mab.run(user_pool, item_pools, item_features, noisy_signal, true_signal, iteration)
 
 c_knn_mab=Correct_KNN_MAB(user_num, item_num, dimension, item_pool_size,alpha, K=user_num, jump_step=10, true_user_features=true_user_features, true_graph=true_adj)
-c_knn_cum_regret, c_knn_adj,c_knn_user_f, c_knn_error, c_knn_graph_error,  c_knn_denoised_signal, c_knn_s_list=c_knn_mab.run(user_pool, item_pools, item_features, noisy_signal, true_signal, iteration)
+c_knn_cum_regret, c_knn_adj,c_knn_user_f, c_knn_error, c_knn_graph_error,  c_knn_denoised_signal=c_knn_mab.run(user_pool, item_pools, item_features, noisy_signal, true_signal, iteration)
 
 gl_mab=GL_MAB(user_num, item_num, dimension, item_pool_size, alpha, gl_alpha, gl_beta, gl_theta, gl_step_size, jump_step=jump_step, mode=1, true_user_features=true_user_features, true_graph=true_adj)
 gl_cum_regret, gl_adj, gl_user_f, gl_error, gl_graph_error, gl_denoised_signal=gl_mab.run(user_pool, item_pools, item_features, noisy_signal,true_signal,  iteration)
@@ -82,10 +82,6 @@ gl_cum_regret, gl_adj, gl_user_f, gl_error, gl_graph_error, gl_denoised_signal=g
 gl2_mab=GL_MAB2(user_num, item_num, dimension, item_pool_size, alpha, gl_alpha, gl_beta, gl_theta, gl_step_size, jump_step=jump_step, mode=1, true_user_features=true_user_features, true_graph=true_adj)
 gl2_cum_regret, gl2_adj, gl2_user_f, gl2_error, gl2_graph_error, gl2_denoised_signal=gl2_mab.run(user_pool, item_pools, item_features, noisy_signal,true_signal,  iteration)
 
-
-plt.plot(c_knn_s_list)
-plt.ylabel('smoothness')
-plt.clf()
 
 plt.figure(figsize=(5,5))
 plt.plot(gl2_cum_regret, label='GL', color='r', marker='o', markersize=5, markevery=0.1)

@@ -59,7 +59,7 @@ for i in range(iteration):
 	gl_s.extend([s])
 
 plt.plot(knn_s, label='KNN')
-#plt.plot(gl_s, label='gl')
+plt.plot(gl_s, label='gl')
 plt.legend(loc=1)
 plt.show()
 
