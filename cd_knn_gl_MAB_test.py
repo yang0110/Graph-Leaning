@@ -31,7 +31,7 @@ dimension=2
 item_pool_size=25
 cluster_num=5
 cluster_std=0.1
-noise_scale=0.1
+noise_scale=0.25
 K=10
 gl_alpha=1
 gl_beta=0.2
@@ -73,8 +73,8 @@ cd_cum_regret, cd_adj, cd_user_f, cd_cluster_f, cd_error, cd_graph_error, cd_clu
 knn_mab=KNN_MAB(user_num, item_num, dimension, item_pool_size,alpha, K=user_num, jump_step=10, true_user_features=true_user_features, true_graph=true_adj)
 knn_cum_regret, knn_adj, knn_user_f, knn_error, knn_graph_error,  knn_denoised_signal=knn_mab.run(user_pool, item_pools, item_features, noisy_signal, true_signal, iteration)
 
-#c_knn_mab=Correct_KNN_MAB(user_num, item_num, dimension, item_pool_size,alpha, K=user_num, jump_step=10, true_user_features=true_user_features, true_graph=true_adj)
-#c_knn_cum_regret, c_knn_adj,c_knn_user_f, c_knn_error, c_knn_graph_error,  c_knn_denoised_signal=c_knn_mab.run(user_pool, item_pools, item_features, noisy_signal, true_signal, iteration)
+c_knn_mab=Correct_KNN_MAB(user_num, item_num, dimension, item_pool_size,alpha, K=user_num, jump_step=10, true_user_features=true_user_features, true_graph=true_adj)
+c_knn_cum_regret, c_knn_adj,c_knn_user_f, c_knn_error, c_knn_graph_error,  c_knn_denoised_signal, c_knn_s_list=c_knn_mab.run(user_pool, item_pools, item_features, noisy_signal, true_signal, iteration)
 
 gl_mab=GL_MAB(user_num, item_num, dimension, item_pool_size, alpha, gl_alpha, gl_beta, gl_theta, gl_step_size, jump_step=jump_step, mode=1, true_user_features=true_user_features, true_graph=true_adj)
 gl_cum_regret, gl_adj, gl_user_f, gl_error, gl_graph_error, gl_denoised_signal=gl_mab.run(user_pool, item_pools, item_features, noisy_signal,true_signal,  iteration)
@@ -83,11 +83,15 @@ gl2_mab=GL_MAB2(user_num, item_num, dimension, item_pool_size, alpha, gl_alpha, 
 gl2_cum_regret, gl2_adj, gl2_user_f, gl2_error, gl2_graph_error, gl2_denoised_signal=gl2_mab.run(user_pool, item_pools, item_features, noisy_signal,true_signal,  iteration)
 
 
+plt.plot(c_knn_s_list)
+plt.ylabel('smoothness')
+plt.clf()
+
 plt.figure(figsize=(5,5))
 plt.plot(gl2_cum_regret, label='GL', color='r', marker='o', markersize=5, markevery=0.1)
 plt.plot(gl_cum_regret, label='GL+KNN', color='k', marker='o', markersize=5, markevery=0.1)
 plt.plot(knn_cum_regret, label='RBF+KNN', color='y', marker='*',markersize=5,  markevery=0.1)
-#plt.plot(c_knn_cum_regret, label='KNN Correct', color='k', marker='*', markersize=8, markevery=0.1)
+plt.plot(c_knn_cum_regret, label='KNN Correct', color='c', marker='*', markersize=8, markevery=0.1)
 plt.plot(cd_cum_regret, label='CD', color='b', marker='p',markersize=5,  markevery=0.1)
 plt.plot(linucb_cum_regret, label='LINUCB', color='g', marker='s',markersize=5,  markevery=0.1)
 plt.ylabel('Cumulative Regret', fontsize=12)
@@ -103,7 +107,7 @@ plt.figure(figsize=(5,5))
 plt.plot(gl2_error, label='GL', color='r', marker='o', markersize=5, markevery=0.1)
 plt.plot(gl_error, label='GL+KNN', color='k', marker='o', markersize=5, markevery=0.1)
 plt.plot(knn_error, label='RBF+KNN', color='y', marker='*',markersize=5,  markevery=0.1)
-#plt.plot(c_knn_error, label='KNN Correct', color='k', marker='*', markersize=5, markevery=0.1)
+plt.plot(c_knn_error, label='KNN Correct', color='c', marker='*', markersize=5, markevery=0.1)
 plt.plot(cd_error, label='CD', color='b', marker='p',markersize=5,  markevery=0.1)
 plt.plot(linucb_error, label='LINUCB', color='g', marker='s',markersize=5,  markevery=0.1)
 plt.ylabel('Learning Error', fontsize=12)
@@ -121,7 +125,7 @@ plt.figure(figsize=(5,5))
 plt.plot(gl2_graph_error, label='GL', color='r', marker='o', markersize=5, markevery=0.3)
 plt.plot(gl_graph_error, label='GL+KNN', color='k', marker='o', markersize=5, markevery=0.3)
 plt.plot(knn_graph_error, label='RBF+KNN', color='y', marker='*',markersize=5,  markevery=0.3)
-#plt.plot(c_knn_graph_error, label='KNN Correct', color='k', marker='*', markersize=5, markevery=0.1)
+plt.plot(c_knn_graph_error, label='KNN Correct', color='c', marker='*', markersize=5, markevery=0.1)
 plt.plot(cd_graph_error, label='CD', color='b', marker='p',markersize=5,  markevery=0.3)
 plt.ylabel('Graph Error', fontsize=12)
 plt.xlabel('Time', fontsize=12)

@@ -105,12 +105,11 @@ class GL_MAB2():
 		self.noisy_signal_copy[self.picked_items]=self.denoised_signal
 
 	def update_user_feature(self, user, picked_item, payoff):
-		item_index=np.where(self.picked_items==picked_item)[-1]
-		signal=self.denoised_signal[item_index, user]
-		item_f=self.item_features[picked_item]
-		self.cov_matrix[user]+=np.outer(item_f, item_f)
-		self.bias[user]+=item_f*signal
-		self.learned_user_features[user]=np.dot(np.linalg.inv(self.cov_matrix[user]), self.bias[user])
+		item_f=self.item_features[self.picked_items]
+		signals=self.denoised_signal[:,user]
+		temp=np.linalg.inv(np.dot(item_f.T, item_f))
+		temp2=np.dot(item_f.T, signals)
+		self.learned_user_features[user]=np.dot(temp, temp2)
 
 	def update_cluster_features(self, user):
 		adj_copy=self.adj.copy()

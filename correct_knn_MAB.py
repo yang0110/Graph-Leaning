@@ -1,12 +1,11 @@
 import numpy as np 
 import pandas as pandas
 import os
-os.chdir('D:/Research/Graph Learning/code/')
+os.chdir('C:/Kaige_Research/Graph Learning/graph_learning_code/')
 from utils import *
 from synthetic_data import *
 from primal_dual_gl import Primal_dual_gl 
 from sklearn.metrics.pairwise import rbf_kernel, euclidean_distances
-
 
 class Correct_KNN_MAB(): 
 	def __init__(self, user_num, item_num, dimension, item_pool_size, alpha, K=10, jump_step=10, true_user_features=None, true_graph=None):
@@ -47,8 +46,8 @@ class Correct_KNN_MAB():
 			self.cluster_bias[u]=np.zeros(self.dimension)	
 
 	def pick_item_and_payoff(self, user, item_pool, time):
-		mean=np.dot(self.item_features[item_pool], self.learned_cluster_features[user])
-		temp1=np.dot(self.item_features[item_pool], np.linalg.inv(self.cluster_cov_matrix[user]))
+		mean=np.dot(self.item_features[item_pool], self.learned_user_features[user])
+		temp1=np.dot(self.item_features[item_pool], np.linalg.inv(self.cov_matrix[user]))
 		temp2=np.sum(temp1*self.item_features[item_pool], axis=1)*np.log(time+1)
 		var=np.sqrt(temp2)
 		pta=mean+self.alpha*var
@@ -64,10 +63,22 @@ class Correct_KNN_MAB():
 		return picked_item, payoff
 
 	def knn_graph(self, time):
-		self.adj=self.true_graph.copy()
+		if (time%self.jump_step==0):
+			print('Update Graph')
+			self.adj, self.lap=learn_knn_graph(self.avaiable_noisy_signal, self.user_num, k=self.K)
+		else:
+			pass
 
 	def knn_signal(self):
-		self.denoised_signal=learn_knn_signal(self.adj, self.avaiable_noisy_signal, len(self.avaiable_noisy_signal), self.user_num)
+		d=np.sum(self.adj, axis=1)
+		degree_matrix=np.diag(d)
+		self.denoised_signal=self.avaiable_noisy_signal.copy()
+		s_list=[]
+		for i in range(3):
+			self.denoised_signal=np.dot(np.dot(np.linalg.inv(degree_matrix), self.adj), self.denoised_signal.T).T
+			s=find_smoothness(self.denoised_signal[0], self.lap)
+			s_list.extend([s])
+		return s_list
 
 	def update_cluster_features(self, user):
 		adj_copy=self.adj.copy()
@@ -85,10 +96,17 @@ class Correct_KNN_MAB():
 		self.learned_cluster_features[user]=np.average(self.learned_user_features, axis=0, weights=weights)
 
 	def update_user_features(self, user, picked_item, payoff):
-		item_f=self.item_features[picked_item]
-		self.cov_matrix[user]+=np.outer(item_f, item_f)
-		self.bias[user]+=item_f*payoff
-		self.learned_user_features[user]=np.dot(np.linalg.inv(self.cov_matrix[user]), self.bias[user])
+		# item_index=np.where(self.picked_items==picked_item)[-1]
+		# signal=self.denoised_signal[item_index, user]
+		# item_f=self.item_features[picked_item]
+		# self.cov_matrix[user]+=np.outer(item_f, item_f)
+		# self.bias[user]+=item_f*signal
+		# self.learned_user_features[user]=np.dot(np.linalg.inv(self.cov_matrix[user]), self.bias[user])
+		item_f=self.item_features[self.picked_items]
+		signals=self.denoised_signal[:,user]
+		temp=np.linalg.inv(np.dot(item_f.T, item_f))
+		temp2=np.dot(item_f.T, signals)
+		self.learned_user_features[user]=np.dot(temp, temp2)
 
 	def find_regret(self, user, item_pool, payoff):
 		max_payoff=np.max(self.noisy_signal[item_pool][:,user])
@@ -115,8 +133,8 @@ class Correct_KNN_MAB():
 
 			picked_item, payoff=self.pick_item_and_payoff(user, item_pool, i)
 			self.knn_graph(i)
-			#self.knn_signal()
-			self.update_cluster_features(user)
+			s_list=self.knn_signal()
+			#self.update_cluster_features(user)
 			self.update_user_features(user, picked_item, payoff)
 			self.find_regret(user, item_pool, payoff)
 
@@ -130,4 +148,4 @@ class Correct_KNN_MAB():
 				self.graph_error.extend([error])
 			else:
 				pass 
-		return self.cum_regret,  self.adj, self.learned_user_features, self.learning_error,self.graph_error, self.denoised_signal
+		return self.cum_regret,  self.adj, self.learned_user_features, self.learning_error,self.graph_error, self.denoised_signal, s_list

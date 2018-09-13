@@ -46,10 +46,11 @@ class LINUCB_MAB():
 		return picked_item, payoff
 
 	def update_user_features(self, user, picked_item, payoff):
-		item_f=self.item_features[picked_item]
-		self.cov_matrix[user]+=np.outer(item_f, item_f)
-		self.bias[user]+=item_f*payoff
-		self.learned_user_features[user]=np.dot(np.linalg.inv(self.cov_matrix[user]), self.bias[user])
+		item_f=self.item_features[self.picked_items]
+		signals=self.avaiable_noisy_signal[:,user]
+		temp=np.linalg.inv(np.dot(item_f.T, item_f))
+		temp2=np.dot(item_f.T, signals)
+		self.learned_user_features[user]=np.dot(temp, temp2)
 
 	def find_regret(self, user, item_pool, payoff):
 		max_payoff=np.max(self.noisy_signal[item_pool][:,user])

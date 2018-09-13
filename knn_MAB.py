@@ -78,7 +78,10 @@ class KNN_MAB():
 			pass
 
 	def knn_signal(self):
-		self.denoised_signal=learn_knn_signal(self.adj, self.avaiable_noisy_signal, len(self.avaiable_noisy_signal), self.user_num)
+		d=np.sum(self.adj, axis=1)
+		degree_matrix=np.diag(d)
+		self.denoised_signal=self.avaiable_noisy_signal.copy()
+		self.denoised_signal=np.dot(np.dot(np.linalg.inv(degree_matrix), self.adj), self.denoised_signal.T).T
 
 	def update_cluster_features(self, user):
 		adj_copy=self.adj.copy()
@@ -126,7 +129,7 @@ class KNN_MAB():
 
 			picked_item, payoff=self.pick_item_and_payoff(user, item_pool, i)
 			self.knn_graph(i)
-			#self.knn_signal()
+			self.knn_signal()
 			self.update_cluster_features(user)
 			self.update_user_features(user, picked_item, payoff)
 			self.find_regret(user, item_pool, payoff)

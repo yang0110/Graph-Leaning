@@ -29,6 +29,7 @@ threshold=0.5
 alpha=1
 beta=0.2
 theta=0.01
+iteration=10
 target_trace=node_num
 
 pos=np.random.uniform(size=(node_num, dimension))
@@ -36,30 +37,32 @@ rbf_adj, rbf_lap=generate_rbf_graph(node_num, pos, threshold=threshold)
 er_adj, er_lap=generate_er_graph(node_num)
 ba_adj, ba_lap=generate_ba_graph(node_num)
 
-rbf_noisy_signal, rbf_signal=generate_signal_gl_siprep(signal_num, node_num, rbf_lap, error_sigma)
-er_noisy_signal, er_signal=generate_signal_gl_siprep(signal_num, node_num, er_lap, error_sigma)
-ba_noisy_signal, ba_signal=generate_signal_gl_siprep(signal_num, node_num, ba_lap, error_sigma)
+true_lap=rbf_lap
+true_adj=rbf_adj
+d=np.sum(true_adj,axis=1)
+true_d_m=np.diag(d)
 
-fig, (ax1, ax2)=plt.subplots(1,2)
-ax1.scatter(pos[:,0], pos[:,1], c=rbf_signal[0], cmap=plt.cm.jet)
-ax2.scatter(pos[:,0], pos[:,1], c=rbf_noisy_signal[0], cmap=plt.cm.jet)
+signal=np.random.normal(size=node_num)
+
+knn_s=[]
+gl_s=[]
+knn_signal=signal
+for i in range(iteration):
+	knn_signal=np.dot(np.dot(np.linalg.inv(true_d_m), true_adj), knn_signal)
+	s=find_smoothness(knn_signal, true_lap)
+	knn_s.extend([s])
+
+gl_signal=signal
+for i in range(iteration):
+	gl_signal=np.dot(np.linalg.inv(np.identity(node_num)+theta*true_lap), gl_signal)
+	s=find_smoothness(gl_signal, true_lap)
+	gl_s.extend([s])
+
+plt.plot(knn_s, label='KNN')
+#plt.plot(gl_s, label='gl')
+plt.legend(loc=1)
 plt.show()
 
-fig, (ax1, ax2)=plt.subplots(1,2)
-ax1.scatter(pos[:,0], pos[:,1], c=er_signal[0], cmap=plt.cm.jet)
-ax2.scatter(pos[:,0], pos[:,1], c=er_noisy_signal[0], cmap=plt.cm.jet)
-plt.show()
-
-fig, (ax1, ax2)=plt.subplots(1,2)
-ax1.scatter(pos[:,0], pos[:,1], c=ba_signal[0], cmap=plt.cm.jet)
-ax2.scatter(pos[:,0], pos[:,1], c=ba_noisy_signal[0], cmap=plt.cm.jet)
-plt.show()
-
-
-true_signal=ba_signal
-noisy_signal=ba_noisy_signal
-true_lap=ba_lap
-true_adj=ba_adj
 
 
 primal_adj, primal_lap, primal_signal=Primal_dual_gl_loop(node_num, noisy_signal, 10)
