@@ -70,12 +70,6 @@ class KNN_MAB():
 		else:
 			pass
 
-	def knn_graph_from_node_features(self, time):
-		if (time%self.jump_step==0):
-			print('Update Graph')
-			self.adj, self.lap=learn_knn_graph_from_node_features(self.learned_user_features, self.user_num, k=self.K)
-		else:
-			pass
 
 	def knn_signal(self):
 		d=np.sum(self.adj, axis=1)

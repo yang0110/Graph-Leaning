@@ -49,6 +49,8 @@ iteration=5
 for i in range(iteration):
 	signal=np.dot(np.dot(np.linalg.inv(true_d_m), true_adj), signal.T).T
 
+
+
 test_signal=signal[0]
 
 graph=create_networkx_graph(node_num, true_adj)
@@ -229,7 +231,7 @@ plt.show()
 
 
 ##########
-gamma_list=1/np.arange(0, 3, 0.1)
+gamma_list=np.arange(0, 10, 0.01)
 k_list=np.arange(1, node_num, 1).astype(int)
 knn_s_list=[]
 knn_ge_list=[]
