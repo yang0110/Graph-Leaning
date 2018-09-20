@@ -18,71 +18,58 @@ from gl_sigrep import Gl_sigrep
 from gl_algorithms import *
 from sklearn.preprocessing import StandardScaler, Normalizer, MinMaxScaler
 import pyunlocbox
+from mpl_toolkits.mplot3d import Axes3D
+timeRun = datetime.datetime.now().strftime('_%m_%d_%H_%M_%S') 
 
 
-newpath='C:/Kaige_Research/Graph Learning/graph_learning_code/results/MAB_models_results/'
+newpath='C:/Kaige_Research/Graph Learning/graph_learning_code/results/linear_signal_results/'+str(timeRun)+'/'
 if not os.path.exists(newpath):
 	    os.makedirs(newpath)
 
 node_num=100
-item_num=10
-noise_scale=0.0
+item_num=1000
+noise_scale=0.1
 dimension=2
 alpha=1
 beta=0.2
-theta=0.4
+theta=0.1
 step_size=0.5
-node_features=np.random.uniform(size=(node_num, dimension))
 item_features=np.random.uniform(size=(item_num, dimension))
+
+
+
+G=graphs.Grid2d(N1=10, N2=10)
+fig, axes=plt.subplots(1,2)
+_=axes[0].spy(G.W)
+G.plot(ax=axes[1])
+
+adj=G.W.toarray()
+pos=G.coords
+node_features=pos.copy()
 clear_signal=np.dot(item_features, node_features.T)
-noise=np.random.normal(size=(item_num, node_num), scale=noise_scale)
-noisy_signal=clear_signal+noise
+
+noisy_signal=clear_signal.copy()
+noisy_signal2=clear_signal.copy()
 
 for i in range(item_num):
 	mask=choice(list(range(node_num)), size=10)
-	noisy_signal[i,mask]=0
-
-# pos=np.random.uniform(size=(node_num, dimension))
-# rbf_adj, rbf_lap=generate_rbf_graph(node_num, pos, threshold=0.5)
-# er_adj, er_lap=generate_er_graph(node_num)
-# ba_adj, ba_lap=generate_ba_graph(node_num)
+	noisy_signal[i, mask]=0
+	mask=choice(list(range(node_num)), size=50)
+	noisy_signal2[i, mask]=0
 
 
-# adj=er_adj.copy()
-# lap=csgraph.laplacian(adj, normed=True)
-# d=np.sum(adj, axis=1)
-# true_d_m=np.diag(d)
-# P=np.dot(np.linalg.inv(true_d_m), adj)
-# noisy_signal=np.random.normal(size=(item_num, node_num))
+signal=clear_signal[0]
+graph=create_networkx_graph(node_num, adj)
+edge_weight=adj[np.triu_indices(node_num,1)]
+edge_color=edge_weight[edge_weight>0]
+plt.figure(figsize=(5,5))
+nodes=nx.draw_networkx_nodes(graph, node_features, node_size=100, node_color=signal, cmap=plt.cm.jet, vmin=0, vmax=1)
+edges=nx.draw_networkx_edges(graph, node_features, width=1.0, alpha=0.5, edge_color=edge_color, edge_cmap=plt.cm.gray, vmin=0.0, vmax=1.0)
+plt.axis('off')
+plt.show()
 
-#nor=Normalizer()
-#noisy_signal=nor.fit_transform(noisy_signal)
 
-#nor=Normalizer()
-#clear_signal=nor.fit_transform(clear_signal)
-
-adj=rbf_kernel(node_features)
-adj[adj<0.5]=0
-np.fill_diagonal(adj,0)
-adj[np.triu_indices(node_num,1)]=0
-adj=adj+adj.T
-d=np.sum(adj, axis=1)
-degree=np.diag(d)
-P=np.dot(np.linalg.inv(degree), adj)
 lap=csgraph.laplacian(adj, normed=False)
-
-iteration=5
-smooth_signal=noisy_signal.copy()
-signal_error=[]
-for i in range(iteration):
-	print('i', i)
-	smooth_signal=np.dot(P, smooth_signal.T).T
-	se=np.linalg.norm(smooth_signal-clear_signal)
-	signal_error.extend([se])
-
-#nor=Normalizer()
-#smooth_signal=nor.fit_transform(smooth_signal)
-
 evalues, evectors=np.linalg.eig(lap)
 order=list(np.arange(0,node_num))
 sorted_evectors=evectors[[x for _, x, in sorted(zip(evalues, order))]]
@@ -95,114 +82,232 @@ def cum_energy(signal, eigen_vectors, node_num):
 		ce_list.extend([ce])
 	return ce_list
 
-cum_e_clear=cum_energy(clear_signal, sorted_evectors, node_num)
-cum_e_noisy=cum_energy(noisy_signal, sorted_evectors, node_num)
-cum_e_smooth=cum_energy(smooth_signal, sorted_evectors, node_num)
+cum_e_clear=cum_energy(clear_signal[0], sorted_evectors, node_num)
+cum_e_noisy=cum_energy(noisy_signal[0], sorted_evectors, node_num)
+cum_e_noisy2=cum_energy(noisy_signal2[0], sorted_evectors, node_num)
 
-plt.plot(cum_e_clear, label='clear', marker='o')
-plt.plot(cum_e_noisy, label='noisy')
-plt.plot(cum_e_smooth, label='smooth')
-plt.legend(loc=1)
+s1=find_smoothness(clear_signal[0], lap)
+s2=find_smoothness(noisy_signal[0], lap)
+s3=find_smoothness(noisy_signal2[0], lap)
+
+plt.plot([s1, s2, s3], '*-')
+plt.ylabel('Smoothness (Dirichlet Energy)', fontsize=12)
+plt.savefig(newpath+'smoothnes'+'.png', dpi=100)
 plt.show()
 
-plt.plot(np.diff(cum_e_clear), label='clear', marker='o')
-plt.plot(np.diff(cum_e_noisy), label='noisy')
-plt.plot(np.diff(cum_e_smooth), label='smooth')
-plt.legend(loc=1)
-plt.show()
-plt.plot(signal_error)
-plt.show()
-
-graph_error_list=[]
-signal_error_list=[]
-smoothness_list=[]
-learned_signals=[]
-for i in range(item_num):
-	print('i',i)
-	smooth=[]
-	signal=clear_signal[i]
-	graph=create_networkx_graph(node_num, adj)
-	edge_weight=adj[np.triu_indices(node_num,1)]
-	edge_color=edge_weight[edge_weight>0]
-	plt.figure(figsize=(5,5))
-	nodes=nx.draw_networkx_nodes(graph, node_features, node_size=100, node_color=signal, cmap=plt.cm.jet)
-	edges=nx.draw_networkx_edges(graph, node_features, width=1.0, alpha=0.5, edge_color=edge_color, edge_cmap=plt.cm.gray, vmin=0.0, vmax=1.0)
-	plt.axis('off')
-	plt.title('True Graph', fontsize=12)
-	plt.show()
-
-	s=find_smoothness(signal, lap)
-	smooth.extend([s])
-
-	signal=noisy_signal[i]
-	graph=create_networkx_graph(node_num, adj)
-	edge_weight=adj[np.triu_indices(node_num,1)]
-	edge_color=edge_weight[edge_weight>0]
-	plt.figure(figsize=(5,5))
-	nodes=nx.draw_networkx_nodes(graph, node_features, node_size=100, node_color=signal, cmap=plt.cm.jet)
-	edges=nx.draw_networkx_edges(graph, node_features, width=1.0, alpha=0.5, edge_color=edge_color, edge_cmap=plt.cm.gray, vmin=0.0, vmax=1.0)
-	plt.axis('off')
-	plt.title('Noisy signal', fontsize=12)
-	plt.show()
-
-	s=find_smoothness(signal, lap)
-	smooth.extend([s])
-######
-	Z=euclidean_distances(signal.reshape(-1,1), squared=True)
-	np.fill_diagonal(Z,0)
-	Z=norm_W(Z, node_num)
-	primal_gl=Primal_dual_gl(node_num, Z, alpha=alpha, beta=beta, step_size=step_size)
-	primal_adj, error=primal_gl.run()
-	lap=csgraph.laplacian(primal_adj, normed=False)
-	learned_signal=np.dot(signal, np.linalg.inv((np.identity(node_num)+theta*lap)))
-	ge=np.linalg.norm(primal_adj-adj)
-	graph_error_list.extend([ge])
-	se=np.linalg.norm(learned_signal-clear_signal[i])
-	signal_error_list.extend([se])
-
-	s=find_smoothness(learned_signal, lap)
-	smooth.extend([s])
-
-	signal=learned_signal
-	graph=create_networkx_graph(node_num, adj)
-	edge_weight=adj[np.triu_indices(node_num,1)]
-	edge_color=edge_weight[edge_weight>0]
-	plt.figure(figsize=(5,5))
-	nodes=nx.draw_networkx_nodes(graph, node_features, node_size=100, node_color=signal, cmap=plt.cm.jet)
-	edges=nx.draw_networkx_edges(graph, node_features, width=1.0, alpha=0.5, edge_color=edge_color, edge_cmap=plt.cm.gray, vmin=0.0, vmax=1.0)
-	plt.axis('off')
-	plt.title('Learned Graph', fontsize=12)
-	plt.show()
-	smoothness_list.append(smooth)
-	learned_signals.append(learned_signal)
-
-
-smooth_signal=nor.fit_transform(np.array(learned_signals))
-smooth_signal=np.dot(smooth_signal, P)
-cum_e_clear=cum_energy(clear_signal, sorted_evectors, node_num)
-cum_e_noisy=cum_energy(noisy_signal, sorted_evectors, node_num)
-cum_e_smooth=cum_energy(smooth_signal, sorted_evectors, node_num)
-
-plt.plot(cum_e_clear, label='clear')
-plt.plot(cum_e_noisy, label='noisy')
-plt.plot(cum_e_smooth, label='smooth')
-plt.legend(loc=1)
+fig, (ax1, ax2, ax3)=plt.subplots(3,1, figsize=(5,5))
+ax2.plot(np.diff(cum_e_noisy), label='noisy')
+ax1.plot(np.diff(cum_e_clear), label='clear')
+ax3.plot(np.diff(cum_e_noisy2), label='noisy2')
+ax1.legend(loc=1)
+ax2.legend(loc=1)
+ax3.legend(loc=1)
+ax3.set_xlabel('Frequency', fontsize=12)
+ax3.set_ylabel('Magitude', fontsize=12)
+ax1.set_ylabel('Magitude', fontsize=12)
+ax2.set_ylabel('Magitude', fontsize=12)
+plt.tight_layout()
+plt.savefig(newpath+'psd_signal'+'.png', dpi=100)
 plt.show()
 
-plt.plot(np.diff(cum_e_clear), label='clear')
-plt.plot(np.diff(cum_e_noisy), label='noisy')
-plt.plot(np.diff(cum_e_smooth), label='smooth')
-plt.legend(loc=1)
+signal=clear_signal[0]
+graph=create_networkx_graph(node_num, adj)
+edge_weight=adj[np.triu_indices(node_num,1)]
+edge_color=edge_weight[edge_weight>0]
+plt.figure(figsize=(5,5))
+nodes=nx.draw_networkx_nodes(graph, node_features, node_size=100, node_color=signal, cmap=plt.cm.jet, vmin=0, vmax=1)
+edges=nx.draw_networkx_edges(graph, node_features, width=1.0, alpha=0.5, edge_color=edge_color, edge_cmap=plt.cm.gray, vmin=0.0, vmax=1.0)
+plt.axis('off')
+plt.savefig(newpath+'clear_signal'+'.png', dpi=100)
 plt.show()
 
-plt.plot(graph_error_list)
-plt.title('graph error')
+signal=noisy_signal[0]
+graph=create_networkx_graph(node_num, adj)
+edge_weight=adj[np.triu_indices(node_num,1)]
+edge_color=edge_weight[edge_weight>0]
+plt.figure(figsize=(5,5))
+nodes=nx.draw_networkx_nodes(graph, node_features, node_size=100, node_color=signal, cmap=plt.cm.jet, vmin=0, vmax=1)
+edges=nx.draw_networkx_edges(graph, node_features, width=1.0, alpha=0.5, edge_color=edge_color, edge_cmap=plt.cm.gray, vmin=0.0, vmax=1.0)
+plt.axis('off')
+plt.savefig(newpath+'noisy_signal'+'.png', dpi=100)
 plt.show()
 
-plt.plot(signal_error_list)
-plt.title('signal error')
+signal=noisy_signal2[0]
+graph=create_networkx_graph(node_num, adj)
+edge_weight=adj[np.triu_indices(node_num,1)]
+edge_color=edge_weight[edge_weight>0]
+plt.figure(figsize=(5,5))
+nodes=nx.draw_networkx_nodes(graph, node_features, node_size=100, node_color=signal, cmap=plt.cm.jet, vmin=0, vmax=1)
+edges=nx.draw_networkx_edges(graph, node_features, width=1.0, alpha=0.5, edge_color=edge_color, edge_cmap=plt.cm.gray, vmin=0.0, vmax=1.0)
+plt.axis('off')
+plt.savefig(newpath+'noisy_signal2'+'.png', dpi=100)
 plt.show()
 
-plt.plot(smoothness_list)
-plt.legend(loc=1)
+
+
+## learn the graph 
+
+Z=euclidean_distances(clear_signal.T, squared=True)
+np.fill_diagonal(Z,0)
+Z=norm_W(Z, node_num)
+
+alpha_list=np.arange(0,3,0.1)
+beta_list=np.arange(0,1,0.1)
+error_list=[]
+for alpha in alpha_list:
+	for beta in beta_list:
+		print('alpha, beta', alpha, beta)
+		primal_gl=Primal_dual_gl(node_num, Z, alpha=alpha, beta=beta, step_size=0.5)
+		primal_adj, error=primal_gl.run()
+		primal_lap=csgraph.laplacian(primal_adj, normed=False)
+		error=np.linalg.norm(primal_adj-adj)
+		error_list.extend([error])
+
+
+fig = plt.figure()
+ax = fig.gca(projection='3d')
+X = alpha_list
+Y = beta_list
+X, Y = np.meshgrid(X, Y)
+Z=np.array(error_list).reshape(X.shape[1], X.shape[0]).T
+surf = ax.plot_surface(X, Y, Z, cmap=plt.cm.jet,
+                       linewidth=0, antialiased=False)
+ax.set_xlabel('Alpha', fontsize=12)
+ax.set_ylabel('Beta', fontsize=12)
+ax.set_zlabel('graph error', fontsize=12)
+fig.colorbar(surf, shrink=0.5, aspect=5)
+plt.savefig(newpath+'gl_graph_error')
+plt.show()
+
+gamma_list=np.arange(0.01,1,0.1)
+k_list=np.arange(1, 10, 1)
+error_list=[]
+for gamma in gamma_list:
+	for k in k_list:
+		print('gamme, k', gamma, k)
+		knn_adj,knn_lap=learn_knn_graph(clear_signal, node_num, k=k, gamma=gamma)
+		error=np.linalg.norm(knn_adj-adj)
+		error_list.extend([error])
+
+fig = plt.figure()
+ax = fig.gca(projection='3d')
+X = gamma_list
+Y = k_list
+X, Y = np.meshgrid(X, Y)
+Z=np.array(error_list).reshape(X.shape[1], X.shape[0]).T
+surf = ax.plot_surface(X, Y, Z, cmap=plt.cm.jet,
+                       linewidth=0, antialiased=False)
+ax.set_xlabel('Gamma', fontsize=12)
+ax.set_ylabel('K', fontsize=12)
+ax.set_zlabel('graph error', fontsize=12)
+fig.colorbar(surf, shrink=0.5, aspect=5)
+plt.savefig(newpath+'rbf_graph_error')
+plt.show()
+
+### denoise signal
+d=np.sum(adj, axis=1)
+D=np.diag(d)
+P=np.dot(np.linalg.inv(D), adj)
+denoise_signal=np.dot(noisy_signal,P)
+denoise_signal2=np.dot(noisy_signal2,P)
+smooth_signal=np.dot(noisy_signal, np.linalg.inv(np.identity(node_num)+theta*lap))
+smooth_signal2=np.dot(noisy_signal2, np.linalg.inv(np.identity(node_num)+theta*lap))
+
+signal=noisy_signal[0]
+graph=create_networkx_graph(node_num, adj)
+edge_weight=adj[np.triu_indices(node_num,1)]
+edge_color=edge_weight[edge_weight>0]
+plt.figure(figsize=(5,5))
+nodes=nx.draw_networkx_nodes(graph, node_features, node_size=100, node_color=signal, cmap=plt.cm.jet, vmin=0, vmax=1)
+edges=nx.draw_networkx_edges(graph, node_features, width=1.0, alpha=0.5, edge_color=edge_color, edge_cmap=plt.cm.gray, vmin=0.0, vmax=1.0)
+plt.axis('off')
+plt.savefig(newpath+'noisy_signal'+'.png', dpi=100)
+plt.show()
+
+
+
+signal=noisy_signal2[0]
+graph=create_networkx_graph(node_num, adj)
+edge_weight=adj[np.triu_indices(node_num,1)]
+edge_color=edge_weight[edge_weight>0]
+plt.figure(figsize=(5,5))
+nodes=nx.draw_networkx_nodes(graph, node_features, node_size=100, node_color=signal, cmap=plt.cm.jet, vmin=0, vmax=1)
+edges=nx.draw_networkx_edges(graph, node_features, width=1.0, alpha=0.5, edge_color=edge_color, edge_cmap=plt.cm.gray, vmin=0.0, vmax=1.0)
+plt.axis('off')
+plt.savefig(newpath+'noisy_signal2'+'.png', dpi=100)
+plt.show()
+
+signal=denoise_signal[0]
+graph=create_networkx_graph(node_num, adj)
+edge_weight=adj[np.triu_indices(node_num,1)]
+edge_color=edge_weight[edge_weight>0]
+plt.figure(figsize=(5,5))
+nodes=nx.draw_networkx_nodes(graph, node_features, node_size=100, node_color=signal, cmap=plt.cm.jet, vmin=0, vmax=1)
+edges=nx.draw_networkx_edges(graph, node_features, width=1.0, alpha=0.5, edge_color=edge_color, edge_cmap=plt.cm.gray, vmin=0.0, vmax=1.0)
+plt.axis('off')
+plt.savefig(newpath+'denoised_signal'+'.png', dpi=100)
+plt.show()
+
+signal=denoise_signal2[0]
+graph=create_networkx_graph(node_num, adj)
+edge_weight=adj[np.triu_indices(node_num,1)]
+edge_color=edge_weight[edge_weight>0]
+plt.figure(figsize=(5,5))
+nodes=nx.draw_networkx_nodes(graph, node_features, node_size=100, node_color=signal, cmap=plt.cm.jet, vmin=0, vmax=1)
+edges=nx.draw_networkx_edges(graph, node_features, width=1.0, alpha=0.5, edge_color=edge_color, edge_cmap=plt.cm.gray, vmin=0.0, vmax=1.0)
+plt.axis('off')
+plt.savefig(newpath+'denoised_signal2'+'.png', dpi=100)
+plt.show()
+
+
+signal=smooth_signal[0]
+graph=create_networkx_graph(node_num, adj)
+edge_weight=adj[np.triu_indices(node_num,1)]
+edge_color=edge_weight[edge_weight>0]
+plt.figure(figsize=(5,5))
+nodes=nx.draw_networkx_nodes(graph, node_features, node_size=100, node_color=signal, cmap=plt.cm.jet, vmin=0, vmax=1)
+edges=nx.draw_networkx_edges(graph, node_features, width=1.0, alpha=0.5, edge_color=edge_color, edge_cmap=plt.cm.gray, vmin=0.0, vmax=1.0)
+plt.axis('off')
+plt.savefig(newpath+'smooth_signal'+'.png', dpi=100)
+plt.show()
+
+signal=smooth_signal2[0]
+graph=create_networkx_graph(node_num, adj)
+edge_weight=adj[np.triu_indices(node_num,1)]
+edge_color=edge_weight[edge_weight>0]
+plt.figure(figsize=(5,5))
+nodes=nx.draw_networkx_nodes(graph, node_features, node_size=100, node_color=signal, cmap=plt.cm.jet, vmin=0, vmax=1)
+edges=nx.draw_networkx_edges(graph, node_features, width=1.0, alpha=0.5, edge_color=edge_color, edge_cmap=plt.cm.gray, vmin=0.0, vmax=1.0)
+plt.axis('off')
+plt.savefig(newpath+'smooth_signal2'+'.png', dpi=100)
+plt.show()
+
+
+
+cum_e_clear=cum_energy(noisy_signal2[0], sorted_evectors, node_num)
+cum_e_noisy=cum_energy(denoise_signal2[0], sorted_evectors, node_num)
+cum_e_noisy2=cum_energy(smooth_signal2[0], sorted_evectors, node_num)
+
+s1=find_smoothness(noisy_signal2[0], lap)
+s2=find_smoothness(denoise_signal2[0], lap)
+s3=find_smoothness(smooth_signal2[0], lap)
+
+plt.plot([s1, s2, s3], '*-')
+plt.ylabel('Smoothness (Dirichlet Energy)', fontsize=12)
+plt.savefig(newpath+'smoothnes'+'.png', dpi=100)
+plt.show()
+
+fig, (ax1, ax2, ax3)=plt.subplots(3,1, figsize=(5,5))
+ax2.plot(np.diff(cum_e_noisy), label='noisy')
+ax1.plot(np.diff(cum_e_clear), label='denoised')
+ax3.plot(np.diff(cum_e_noisy2), label='smooth')
+ax1.legend(loc=1)
+ax2.legend(loc=1)
+ax3.legend(loc=1)
+ax3.set_xlabel('Frequency', fontsize=12)
+ax3.set_ylabel('Magitude', fontsize=12)
+ax1.set_ylabel('Magitude', fontsize=12)
+ax2.set_ylabel('Magitude', fontsize=12)
+plt.tight_layout()
+plt.savefig(newpath+'psd_signal2'+'.png', dpi=100)
 plt.show()
